@@ -11,7 +11,12 @@
 ### 🐳 Google Cloud Shell — 用于 Docker 周(week04~06)
 > ⚠️ Play with Docker 已于 2026-03-01 停用,改用 Google Cloud Shell(Docker 预装、免费)。
 1. 打开 **https://shell.cloud.google.com**,用 **Google 账号**登录(首次点 Continue / 启动 Cloud Shell)。
-2. 出现浏览器终端后 `docker` 已就绪,命令直接粘进去。截图就截这个终端区域。
+2. 出现浏览器终端后,**第一条命令先隐藏用户名**(默认提示符 `r1bymask@cloudshell:~ (项目ID)$` 会暴露邮箱前缀+项目ID):
+   ```bash
+   export PS1='\w\$ '          # 提示符 → 纯 경로(예: ~$), 사용자명 없음
+   # 또는 코스의 우분투처럼: export PS1='ubuntu@lab:\w\$ '
+   ```
+   그다음 `docker` 명령을 붙여넣는다. **截图只框住终端区域**,别把浏览器标签/书签栏截进去(개인정보 노출 방지).
 3. 需要"网页访问"截图时(下面 week04 的 `localhost:8080`):点终端窗口右上的 **Web Preview(网页预览)→ Change port → 8080**,打开的页面就是容器响应 → 截那个页面。
 
 > 替代 환경(任选其一也行):**GitHub Codespaces**(你已有 GitHub:仓库页 Code → Codespaces → Create,终端里有 docker)、**killercoda Ubuntu playground**(需先 `curl -fsSL https://get.docker.com | sh`)。
