@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WEEK 04 · 도커 개념과 이미지 빌드 — 멀티 스테이지까지 — Cloud Programming Lab</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="../index.html">☁ Cloud Programming Lab</a>
+    <nav class="topnav">
+      <a href="../index.html">홈</a>
+      <a href="../index.html#posts">강의별 기록</a>
+      <a href="../index.html#about">소개</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <div class="post-head">
+    <span class="weekbadge">WEEK 04</span>
+    <span class="post-group">Docker</span>
+    <h1>도커 개념과 이미지 빌드 — 멀티 스테이지까지</h1>
+    <div class="tags"><span class="tag">Docker</span><span class="tag">컨테이너</span><span class="tag">Dockerfile</span><span class="tag">멀티 스테이지</span><span class="tag">이미지 레이어</span></div>
+  </div>
+  <div class="post-layout">
+    <div class="post-body">
+    <p>도커 첫 주차. 우분투에 도커 설치 → 컨테이너 실행 → Dockerfile 빌드 → 멀티 스테이지 빌드 순서로 실습했다.</p>
+<h2 id="_1">도커 설치</h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># 옛 버전 제거</span>
+sudo<span class="w"> </span>apt-get<span class="w"> </span>remove<span class="w"> </span>docker<span class="w"> </span>docker-engine<span class="w"> </span>docker.io<span class="w"> </span>containerd<span class="w"> </span>runc
+<span class="c1"># 필수 패키지 설치</span>
+sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>apt-transport-https<span class="w"> </span>ca-certificates<span class="w"> </span>curl<span class="w"> </span>gnupg-agent<span class="w"> </span>software-properties-common
+<span class="c1"># 도커 GPG 키 + 저장소 등록</span>
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://download.docker.com/linux/ubuntu/gpg<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>apt-key<span class="w"> </span>add<span class="w"> </span>-
+sudo<span class="w"> </span>apt-key<span class="w"> </span>fingerprint<span class="w"> </span>0EBFCD88
+sudo<span class="w"> </span>add-apt-repository<span class="w"> </span><span class="s2">&quot;deb [arch=amd64] https://download.docker.com/linux/ubuntu </span><span class="k">$(</span>lsb_release<span class="w"> </span>-cs<span class="k">)</span><span class="s2"> stable&quot;</span>
+<span class="c1"># 도커 엔진 설치</span>
+sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>docker-ce<span class="w"> </span>docker-ce-cli<span class="w"> </span>containerd.io
+<span class="c1"># 설치 확인</span>
+docker<span class="w"> </span>version
+docker-compose<span class="w"> </span>version
+</code></pre></div>
+
+<p><code>docker version</code> 에 Client·Server 버전이 모두 나오면 정상.</p>
+<div class="admonition capture">
+<p class="admonition-title">docker version 출력</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_2">컨테이너 기본 명령</h2>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>container<span class="w"> </span>run<span class="w"> </span>--interactive<span class="w"> </span>--tty<span class="w"> </span>diamol/base<span class="w">  </span><span class="c1"># 컨테이너 셸 진입</span>
+hostname<span class="w">                       </span><span class="c1"># 컨테이너 호스트명</span>
+date
+docker<span class="w"> </span>container<span class="w"> </span>ls<span class="w">            </span><span class="c1"># 실행 중 컨테이너</span>
+docker<span class="w"> </span>container<span class="w"> </span>top<span class="w"> </span>&lt;id&gt;<span class="w">      </span><span class="c1"># 컨테이너 내 프로세스</span>
+docker<span class="w"> </span>container<span class="w"> </span>logs<span class="w"> </span>&lt;id&gt;<span class="w">     </span><span class="c1"># 로그</span>
+docker<span class="w"> </span>container<span class="w"> </span>inspect<span class="w"> </span>&lt;id&gt;<span class="w">  </span><span class="c1"># 상세 정보(JSON)</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">container ls / logs 출력</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_3">컨테이너로 웹 호스팅</h2>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>container<span class="w"> </span>ls<span class="w"> </span>--all<span class="w">                                          </span><span class="c1"># 멈춘 것까지 전체</span>
+docker<span class="w"> </span>container<span class="w"> </span>stats<span class="w"> </span>&lt;이미지&gt;<span class="w">                                     </span><span class="c1"># 리소스 사용량</span>
+docker<span class="w"> </span>container<span class="w"> </span>rm<span class="w"> </span>--force<span class="w"> </span><span class="k">$(</span>docker<span class="w"> </span>container<span class="w"> </span>ls<span class="w"> </span>--all<span class="w"> </span>--quiet<span class="k">)</span><span class="w">   </span><span class="c1"># 전체 삭제</span>
+</code></pre></div>
+
+<p>브라우저에서 <code>http://localhost:8080</code> 접속 → 컨테이너가 응답.</p>
+<div class="admonition capture">
+<p class="admonition-title">localhost:8080 접속 화면</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="docker-hub">Docker Hub 이미지 실행</h2>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>image<span class="w"> </span>pull<span class="w"> </span>diamol/ch03-web-ping
+docker<span class="w"> </span>container<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>web-ping<span class="w"> </span>diamol/ch03-web-ping<span class="w">     </span><span class="c1"># 백그라운드 실행</span>
+docker<span class="w"> </span>container<span class="w"> </span>logs<span class="w"> </span>web-ping
+docker<span class="w"> </span>rm<span class="w"> </span>-f<span class="w"> </span>web-ping
+docker<span class="w"> </span>container<span class="w"> </span>run<span class="w"> </span>--env<span class="w"> </span><span class="nv">TARGET</span><span class="o">=</span>google.com<span class="w"> </span>diamol/ch03-web-ping<span class="w"> </span><span class="c1"># 환경 변수로 대상 변경</span>
+</code></pre></div>
+
+<h2 id="dockerfile">Dockerfile 빌드</h2>
+<p>web-ping Dockerfile:</p>
+<div class="highlight"><pre><span></span><code><span class="k">FROM</span><span class="w"> </span><span class="s">diamol/node</span>
+<span class="k">ENV</span><span class="w"> </span><span class="nv">TARGET</span><span class="o">=</span><span class="s2">&quot;blog.sixeyed.com&quot;</span>
+<span class="k">ENV</span><span class="w"> </span><span class="nv">METHOD</span><span class="o">=</span><span class="s2">&quot;HEAD&quot;</span>
+<span class="k">ENV</span><span class="w"> </span><span class="nv">INTERVAL</span><span class="o">=</span><span class="s2">&quot;3000&quot;</span>
+<span class="k">WORKDIR</span><span class="w"> </span><span class="s">/web-ping</span>
+<span class="k">COPY</span><span class="w"> </span>app.js<span class="w"> </span>.
+<span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;node&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;/web-ping/app.js&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch03/exercises/web-ping
+docker<span class="w"> </span>image<span class="w"> </span>build<span class="w"> </span>--tag<span class="w"> </span>web-ping<span class="w"> </span>.<span class="w">   </span><span class="c1"># 이미지 빌드</span>
+docker<span class="w"> </span>image<span class="w"> </span>ls<span class="w"> </span><span class="s1">&#39;w*&#39;</span>
+docker<span class="w"> </span>image<span class="w"> </span><span class="nb">history</span><span class="w"> </span>web-ping<span class="w">         </span><span class="c1"># 레이어 내역</span>
+</code></pre></div>
+
+<p>레이어 캐시: 자주 바뀌는 <code>COPY app.js</code> 는 뒤쪽에 둬야 캐시 재사용.</p>
+<div class="admonition capture">
+<p class="admonition-title">image build / image ls 출력</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_4">멀티 스테이지 빌드</h2>
+<p>기본 구조 (build → test → 최종 단계, <code>COPY --from=</code> 으로 결과물만 전달):</p>
+<div class="highlight"><pre><span></span><code><span class="k">FROM</span><span class="w"> </span><span class="s">diamol/base</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="s">build-stage</span>
+<span class="k">RUN</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;Building...&#39;</span><span class="w"> </span>&gt;<span class="w"> </span>/build.txt
+<span class="k">FROM</span><span class="w"> </span><span class="s">diamol/base</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="s">test-stage</span>
+<span class="k">COPY</span><span class="w"> </span>--from<span class="o">=</span>build-stage<span class="w"> </span>/build.txt<span class="w"> </span>/build.txt
+<span class="k">RUN</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;Testing...&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/build.txt
+<span class="k">FROM</span><span class="w"> </span><span class="s">diamol/base</span>
+<span class="k">COPY</span><span class="w"> </span>--from<span class="o">=</span>test-stage<span class="w"> </span>/build.txt<span class="w"> </span>/build.txt
+<span class="k">CMD</span><span class="w"> </span>cat<span class="w"> </span>/build.txt
+</code></pre></div>
+
+<p>Java(Maven) 멀티 스테이지 — 빌드 도구는 빌더 단계에만, 최종 이미지엔 JDK·jar만:</p>
+<div class="highlight"><pre><span></span><code><span class="k">FROM</span><span class="w"> </span><span class="s">diamol/maven</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="s">builder</span>
+<span class="k">WORKDIR</span><span class="w"> </span><span class="s">/usr/src/iotd</span>
+<span class="k">COPY</span><span class="w"> </span>pom.xml<span class="w"> </span>.
+<span class="k">RUN</span><span class="w"> </span>mvn<span class="w"> </span>-B<span class="w"> </span>dependency:go-offline
+<span class="k">COPY</span><span class="w"> </span>.<span class="w"> </span>.
+<span class="k">RUN</span><span class="w"> </span>mvn<span class="w"> </span>package
+<span class="k">FROM</span><span class="w"> </span><span class="s">diamol/openjdk</span>
+<span class="k">WORKDIR</span><span class="w"> </span><span class="s">/app</span>
+<span class="k">COPY</span><span class="w"> </span>--from<span class="o">=</span>builder<span class="w"> </span>/usr/src/iotd/target/iotd-service-0.1.0.jar<span class="w"> </span>.
+<span class="k">EXPOSE</span><span class="w"> </span><span class="s">80</span>
+<span class="k">ENTRYPOINT</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;java&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;-jar&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;/app/iotd-service-0.1.0.jar&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p><code>docker image ls</code> 로 빌더 이미지보다 최종 이미지가 작음을 확인.</p>
+<div class="admonition capture">
+<p class="admonition-title">이미지 크기 비교</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_5">막혔던 점</h2>
+<ul>
+<li><code>docker</code> permission denied → <code>sudo usermod -aG docker $USER</code> 후 재로그인.</li>
+<li>컨테이너가 바로 종료(Exited) → 서버형은 <code>-d</code> + 상주 프로세스(CMD/ENTRYPOINT) 필요.</li>
+<li>빌드가 매번 느림 → <code>COPY pom.xml</code> + 의존성 설치를 먼저, <code>COPY . .</code> 는 뒤로 (캐시 재사용).</li>
+</ul>
+    </div>
+    <aside class="toc"><div class="toc-title">목차</div><div class="toc">
+<ul>
+<li><a href="#_1">도커 설치</a></li>
+<li><a href="#_2">컨테이너 기본 명령</a></li>
+<li><a href="#_3">컨테이너로 웹 호스팅</a></li>
+<li><a href="#docker-hub">Docker Hub 이미지 실행</a></li>
+<li><a href="#dockerfile">Dockerfile 빌드</a></li>
+<li><a href="#_4">멀티 스테이지 빌드</a></li>
+<li><a href="#_5">막혔던 점</a></li>
+</ul>
+</div>
+</aside>
+  </div>
+  <nav class="postnav">
+    <a class="pn prev" href="week03.html">← WEEK 03<span>네트워크 기초와 Amazon VPC</span></a>
+    <a class="pn next" href="week05.html">WEEK 05 →<span>도커 레지스트리 · 볼륨 · 컴포즈</span></a>
+  </nav>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>클라우드 프로그래밍 기말 과제 · 개인 학습 포트폴리오</p>
+    <p class="muted">AWS · Docker · Kubernetes 실습 기록</p>
+  </div>
+</footer>
+</body>
+</html>

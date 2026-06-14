@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WEEK 09 · 파드 · 디플로이먼트 · 서비스(네트워크) — Cloud Programming Lab</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="../index.html">☁ Cloud Programming Lab</a>
+    <nav class="topnav">
+      <a href="../index.html">홈</a>
+      <a href="../index.html#posts">강의별 기록</a>
+      <a href="../index.html#about">소개</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <div class="post-head">
+    <span class="weekbadge">WEEK 09</span>
+    <span class="post-group">Kubernetes 입문</span>
+    <h1>파드 · 디플로이먼트 · 서비스(네트워크)</h1>
+    <div class="tags"><span class="tag">Kubernetes</span><span class="tag">Pod</span><span class="tag">Deployment</span><span class="tag">Service</span><span class="tag">kubectl</span></div>
+  </div>
+  <div class="post-layout">
+    <div class="post-body">
+    <p>쿠버네티스 초급. 파드 실행 → 디플로이먼트(컨트롤러) → 매니페스트(YAML) 선언적 배포 → 서비스로 통신 순서로 실습했다.</p>
+<h2 id="_1">파드 실행</h2>
+<p>컨테이너는 단독으로 동작하지 않고 <strong>파드(Pod)</strong> 에 담겨 동작한다. 간단한 파드는 명령행에서 바로 실행한다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>run<span class="w"> </span>hello-kiamol<span class="w"> </span>--image<span class="o">=</span>kiamol/ch02-hello-kiamol<span class="w">  </span><span class="c1"># 파드 하나 실행</span>
+kubectl<span class="w"> </span><span class="nb">wait</span><span class="w"> </span>--for<span class="o">=</span><span class="nv">condition</span><span class="o">=</span>Ready<span class="w"> </span>pod<span class="w"> </span>hello-kiamol<span class="w">         </span><span class="c1"># 준비 상태 대기</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w">                                            </span><span class="c1"># 파드 목록</span>
+kubectl<span class="w"> </span>describe<span class="w"> </span>pod<span class="w"> </span>hello-kiamol<span class="w">                           </span><span class="c1"># 상세 정보</span>
+</code></pre></div>
+
+<p>출력 형식은 커스터마이징할 수 있다.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 원하는 열만 출력</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>hello-kiamol<span class="w"> </span>--output<span class="w"> </span>custom-columns<span class="o">=</span>NAME:metadata.name,NODE_IP:status.hostIP,POD_IP:status.podIP
+<span class="c1"># JSONPath로 특정 항목만 출력</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>hello-kiamol<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.status.containerStatuses[0].containerID}&#39;</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">kubectl get pods 출력</p>
+<p>(실습 화면 캡처 — STATUS Running, READY 1/1)</p>
+</div>
+<h3 id="_2">자가치유</h3>
+<p>쿠버네티스는 파드에 필요한 컨테이너 개수를 유지한다. 컨테이너를 직접 지워도 대체 컨테이너가 생성된다.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 파드에 포함된 컨테이너를 강제 삭제</span>
+docker<span class="w"> </span>container<span class="w"> </span>rm<span class="w"> </span>-f<span class="w"> </span><span class="k">$(</span>docker<span class="w"> </span>container<span class="w"> </span>ls<span class="w"> </span>-q<span class="w"> </span>--filter<span class="w"> </span><span class="nv">label</span><span class="o">=</span>io.kubernetes.container.name<span class="o">=</span>hello-kiamol<span class="k">)</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>hello-kiamol<span class="w">   </span><span class="c1"># 컨테이너가 다시 생성됨</span>
+</code></pre></div>
+
+<h3 id="_3">포트포워딩</h3>
+<p><code>kubectl port-forward</code> 는 로컬 포트로 들어온 트래픽을 파드 포트로 임시 전달한다(디버깅용).</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>port-forward<span class="w"> </span>pod/hello-kiamol<span class="w"> </span><span class="m">8080</span>:80<span class="w">  </span><span class="c1"># 로컬 8080 → 파드 80, ctrl-c로 중단</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">port-forward 후 브라우저 화면</p>
+<p>(http://localhost:8080 의 hello-kiamol 페이지 캡처)</p>
+</div>
+<h2 id="_4">디플로이먼트</h2>
+<p>디플로이먼트는 파드를 관리하는 컨트롤러 객체다. 현재 상태가 바람직한 상태와 다르면 자동으로 보정한다(노드 고장 시 대체 파드 실행 등).</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>deployment<span class="w"> </span>hello-kiamol-2<span class="w"> </span>--image<span class="o">=</span>kiamol/ch02-hello-kiamol<span class="w">  </span><span class="c1"># 디플로이먼트 생성</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pods
+</code></pre></div>
+
+<p>디플로이먼트는 관리 대상 파드에 <strong>레이블</strong> 을 부여하고 <strong>레이블 셀렉터</strong> 로 식별한다.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 디플로이먼트가 부여한 레이블 출력</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>deploy<span class="w"> </span>hello-kiamol-2<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.spec.template.metadata.labels}&#39;</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>hello-kiamol-2<span class="w">   </span><span class="c1"># 해당 레이블 파드 목록</span>
+</code></pre></div>
+
+<p>파드 레이블을 셀렉터와 다르게 바꾸면 컨트롤러가 관리 대상에서 제외하고 부족분을 채우려 파드를 하나 더 만든다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>label<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>hello-kiamol-2<span class="w"> </span>--overwrite<span class="w"> </span><span class="nv">app</span><span class="o">=</span>hello-kiamol-x<span class="w">   </span><span class="c1"># 레이블 변경 → 파드 추가됨</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-o<span class="w"> </span>custom-columns<span class="o">=</span>NAME:metadata.name,LABELS:metadata.labels
+kubectl<span class="w"> </span>label<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>hello-kiamol-x<span class="w"> </span>--overwrite<span class="w"> </span><span class="nv">app</span><span class="o">=</span>hello-kiamol-2<span class="w">   </span><span class="c1"># 원복 → 여분 정리</span>
+kubectl<span class="w"> </span>port-forward<span class="w"> </span>deploy/hello-kiamol-2<span class="w"> </span><span class="m">8080</span>:80<span class="w">                        </span><span class="c1"># 디플로이먼트에도 포트포워딩</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">레이블 수정으로 파드가 추가된 화면</p>
+<p>(레이블 변경 직후 파드가 하나 늘어난 NAME·LABELS 목록 캡처)</p>
+</div>
+<h2 id="_5">매니페스트로 배포</h2>
+<p>매니페스트는 주로 <strong>YAML</strong> 로 쓰며 <code>apiVersion</code> 과 <code>kind</code> 로 시작한다. <code>--dry-run=client -o yaml</code> 로 골격을 생성할 수 있다.</p>
+<p><img alt="kubectl로 디플로이먼트 매니페스트 생성" src="../assets/img/week09-kubectl-deploy.png" /><br />
+<em>▲ <code>kubectl create deployment ... --dry-run=client -o yaml</code> 로 디플로이먼트 매니페스트를 직접 생성해 본 결과(로컬 실행). <code>apiVersion</code>·<code>kind</code>·<code>spec.selector</code>·<code>template</code> 구조가 한눈에 보인다.</em></p>
+<p><code>pod.yaml</code> — 컨테이너 하나를 실행하는 단일 파드.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Pod</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-kiamol-3</span><span class="w">       </span><span class="c1"># 이름은 필수, 레이블은 선택</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">containers</span><span class="p">:</span><span class="w">                </span><span class="c1"># 파드는 실행할 컨테이너를 정의해야 한다</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">web</span><span class="w">              </span><span class="c1"># 컨테이너는 이름과 이미지로 정의된다</span>
+<span class="w">      </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kiamol/ch02-hello-kiamol</span>
+</code></pre></div>
+
+<p><code>kubectl apply -f</code> 로 적용한다. 로컬 파일과 원격 URL 모두 가능하다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>pod.yaml<span class="w">   </span><span class="c1"># 로컬 매니페스트로 배포</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pods
+<span class="c1"># 원격 URL 매니페스트로 바로 배포</span>
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>https://raw.githubusercontent.com/sixeyed/kiamol/master/ch02/pod.yaml
+</code></pre></div>
+
+<p><code>deployment.yaml</code> — <code>apps/v1</code> API. 셀렉터(<code>spec.selector.matchLabels</code>)와 파드 템플릿(<code>spec.template</code>)을 정의한다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apps/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Deployment</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-kiamol-4</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">                  </span><span class="c1"># 디플로이먼트가 관리 대상을 찾는 셀렉터</span>
+<span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-kiamol-4</span>
+<span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">                  </span><span class="c1"># 파드를 만들 때 쓰는 템플릿</span>
+<span class="w">    </span><span class="nt">metadata</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">labels</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-kiamol-4</span><span class="w">  </span><span class="c1"># 셀렉터와 일치하는 레이블이어야 한다</span>
+<span class="w">    </span><span class="nt">spec</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">containers</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">web</span>
+<span class="w">          </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kiamol/ch02-hello-kiamol</span>
+</code></pre></div>
+
+<div class="admonition warning">
+<p class="admonition-title">셀렉터와 템플릿 레이블은 반드시 일치해야 한다</p>
+<p><code>spec.selector.matchLabels</code> 와 <code>spec.template.metadata.labels</code> 가 다르면 컨트롤러가 자기 파드를 인식하지 못한다.</p>
+</div>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>deployment.yaml<span class="w">         </span><span class="c1"># 디플로이먼트 실행</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>hello-kiamol-4<span class="w">   </span><span class="c1"># 만들어진 파드 확인</span>
+</code></pre></div>
+
+<p>컨트롤러가 만든 리소스는 직접 지워도 컨트롤러가 다시 만든다. 정말 없애려면 컨트롤러를 삭제한다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>delete<span class="w"> </span>pods<span class="w"> </span>--all<span class="w">     </span><span class="c1"># 파드 전체 삭제해도</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w">              </span><span class="c1"># 디플로이먼트가 되살림</span>
+kubectl<span class="w"> </span>delete<span class="w"> </span>deploy<span class="w"> </span>--all<span class="w">   </span><span class="c1"># 컨트롤러를 삭제해야 제거됨</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>all
+</code></pre></div>
+
+<h2 id="_6">서비스로 통신</h2>
+<p>파드 IP는 파드가 대체될 때마다 바뀐다. 서비스(Service)는 고정 도메인 네임을 제공해 이 문제를 푼다(어드레스 디스커버리). 서비스 이름은 클러스터 내부 DNS에 등록된다.</p>
+<p><img alt="kubectl로 ClusterIP 서비스 매니페스트 생성" src="../assets/img/week09-kubectl-svc.png" /><br />
+<em>▲ <code>kubectl create service clusterip ... --dry-run=client -o yaml</code> 로 생성한 ClusterIP 서비스 매니페스트(로컬 실행). <code>spec.selector</code> 와 <code>ports</code> 로 어떤 파드에 어떤 포트로 연결할지 정의한다.</em></p>
+<p>파드 IP가 바뀌는 것부터 두 sleep 디플로이먼트로 확인한다.</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch03
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/sleep1.yaml<span class="w"> </span>-f<span class="w"> </span>sleep/sleep2.yaml<span class="w">   </span><span class="c1"># 디플로이먼트 둘 생성</span>
+kubectl<span class="w"> </span><span class="nb">wait</span><span class="w"> </span>--for<span class="o">=</span><span class="nv">condition</span><span class="o">=</span>Ready<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>sleep-2
+<span class="c1"># 두 번째 파드 IP 확인 후 그 IP로 ping</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>sleep-2<span class="w"> </span>--output<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.items[0].status.podIP}&#39;</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep-1<span class="w"> </span>--<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="k">$(</span>kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>sleep-2<span class="w"> </span>--output<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.items[0].status.podIP}&#39;</span><span class="k">)</span>
+kubectl<span class="w"> </span>delete<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>sleep-2<span class="w">                        </span><span class="c1"># 파드 대체 → IP가 바뀐다</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>sleep-2<span class="w"> </span>--output<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.items[0].status.podIP}&#39;</span>
+</code></pre></div>
+
+<p><code>sleep2-service.yaml</code> — 기본 유형인 <strong>ClusterIP</strong> 서비스. 클러스터 내부에서만 유효한 IP를 부여한다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Service</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sleep-2</span><span class="w">          </span><span class="c1"># 서비스 이름이 도메인 네임으로 쓰인다</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">selector</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sleep-2</span><span class="w">         </span><span class="c1"># app=sleep-2 인 모든 파드가 대상이다</span>
+<span class="w">  </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span><span class="w">           </span><span class="c1"># 80 포트를 주시하다 파드의 80 포트로 전달</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/sleep2-service.yaml
+kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </span>sleep-2
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep-1<span class="w"> </span>--<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">1</span><span class="w"> </span>sleep-2<span class="w">   </span><span class="c1"># ping은 막혀도 DNS 이름은 해소됨</span>
+</code></pre></div>
+
+<h3 id="clusterip">파드 간 통신 — ClusterIP</h3>
+<p>내부 API를 호출하는 웹 애플리케이션(numbers). API용 서비스가 없으면 Go 버튼이 오류를 낸다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>numbers/api.yaml<span class="w"> </span>-f<span class="w"> </span>numbers/web.yaml<span class="w">   </span><span class="c1"># 웹·API 디플로이먼트 실행</span>
+kubectl<span class="w"> </span><span class="nb">wait</span><span class="w"> </span>--for<span class="o">=</span><span class="nv">condition</span><span class="o">=</span>Ready<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>numbers-web
+kubectl<span class="w"> </span>port-forward<span class="w"> </span>deploy/numbers-web<span class="w"> </span><span class="m">8080</span>:80<span class="w">          </span><span class="c1"># http://localhost:8080, Go 버튼 → 오류</span>
+</code></pre></div>
+
+<p><code>api-service.yaml</code> 로 API용 ClusterIP 서비스를 배포하면 웹이 서비스 이름으로 API를 찾으므로 API 파드가 대체돼도 정상 동작한다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Service</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numbers-api</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span>
+<span class="w">  </span><span class="nt">selector</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numbers-api</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ClusterIP</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">Go 버튼 정상 동작 화면</p>
+<p>(API 서비스 배포 후 무작위 숫자가 출력되는 화면 캡처)</p>
+</div>
+<h3 id="loadbalancer">외부 트래픽 — LoadBalancer</h3>
+<p>외부 트래픽을 파드로 전달하려면 <strong>LoadBalancer</strong> 서비스를 쓴다. 외부 EXTERNAL-IP로 접근한다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Service</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numbers-web</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w">       </span><span class="c1"># 서비스가 주시하는 포트</span>
+<span class="w">      </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span><span class="w">   </span><span class="c1"># 트래픽이 전달될 파드의 포트</span>
+<span class="w">  </span><span class="nt">selector</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numbers-web</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LoadBalancer</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>numbers/web-service.yaml<span class="w">   </span><span class="c1"># 방화벽 허용을 물으면 허용</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </span>numbers-web
+<span class="c1"># EXTERNAL-IP로 애플리케이션 URL 출력</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </span>numbers-web<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;http://{.status.loadBalancer.ingress[0].*}:8080&#39;</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">LoadBalancer EXTERNAL-IP</p>
+<p>(EXTERNAL-IP 가 채워진 화면 캡처)</p>
+</div>
+<h3 id="externalname">ExternalName과 헤드리스</h3>
+<p>클러스터 외부 컴포넌트는 <strong>ExternalName</strong> 서비스로 로컬 이름을 외부 도메인(CNAME)에 연결한다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Service</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numbers-api</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ExternalName</span>
+<span class="w">  </span><span class="nt">externalName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">raw.githubusercontent.com</span><span class="w">   </span><span class="c1"># 로컬 이름을 해소할 외부 도메인</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>delete<span class="w"> </span>svc<span class="w"> </span>numbers-api
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>numbers-services/api-service-externalName.yaml
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep-1<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;nslookup numbers-api | tail -n 5&#39;</span><span class="w">   </span><span class="c1"># CNAME 연결 확인</span>
+</code></pre></div>
+
+<p><code>selector</code> 없이 <strong>Endpoints</strong> 에 정적 IP를 직접 적으면 <strong>헤드리스 서비스</strong> 가 된다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Service</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numbers-api</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ClusterIP</span>
+<span class="w">  </span><span class="nt">ports</span><span class="p">:</span><span class="w">                </span><span class="c1"># selector 가 없으므로 헤드리스 서비스</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span>
+<span class="nn">---</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Endpoints</span>
+<span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numbers-api</span>
+<span class="nt">subsets</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">addresses</span><span class="p">:</span><span class="w">          </span><span class="c1"># 정적 IP 주소 목록</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.123.234</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>numbers-services/api-service-headless.yaml
+kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </span>numbers-api
+kubectl<span class="w"> </span>get<span class="w"> </span>endpoints<span class="w"> </span>numbers-api
+</code></pre></div>
+
+<h3 id="_7">엔드포인트와 네임스페이스</h3>
+<p>엔드포인트(Endpoints)는 서비스가 가리키는 파드 IP 목록이며, 파드가 대체되면 자동 갱신된다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>endpoints<span class="w"> </span>sleep-2
+kubectl<span class="w"> </span>delete<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>sleep-2<span class="w">   </span><span class="c1"># 엔드포인트가 새 IP로 갱신됨</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>endpoints<span class="w"> </span>sleep-2
+</code></pre></div>
+
+<p>네임스페이스는 클러스터를 논리적으로 분할한다. <code>-n</code> 으로 대상을 지정하며, FQDN은 <code>서비스.네임스페이스.svc.cluster.local</code> 형태다. 내부 DNS는 <code>kube-system</code> 의 kube-dns가 담당한다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </span>-n<span class="w"> </span>kube-system
+<span class="c1"># FQDN으로 DNS 조회</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep-1<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;nslookup numbers-api.default.svc.cluster.local | grep &quot;^[^*]&quot;&#39;</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">nslookup 결과</p>
+<p>(서비스 이름이 클러스터 내부 IP/도메인으로 해소되는 화면 캡처)</p>
+</div>
+<h2 id="_8">막혔던 점</h2>
+<ul>
+<li>서비스 이름으로 ping 실패 → ClusterIP에서 ICMP는 막힌 경우가 많음. HTTP 요청이나 nslookup으로 검증.</li>
+<li>파드를 지워도 되살아남 → 디플로이먼트의 관리 대상이라 그렇다. <code>kubectl delete deploy ...</code> 로 컨트롤러를 삭제.</li>
+<li>레이블을 바꿨더니 파드 추가 → 셀렉터 불일치로 관리 제외됨. 레이블 원복으로 정리.</li>
+<li>Go 버튼 오류 → api-service 미배포로 이름 해소 실패. API용 ClusterIP 배포로 해결.</li>
+<li>LoadBalancer EXTERNAL-IP <code>&lt;pending&gt;</code> → 플랫폼에 따라 제공 방식 다름. 방화벽 허용 후 노드 IP/포트나 NodePort로 대체.</li>
+<li><code>delete --all</code> 은 현재 네임스페이스 전체를 지움 → 실행 전 <code>-n</code> 으로 대상 확인.</li>
+</ul>
+    </div>
+    <aside class="toc"><div class="toc-title">목차</div><div class="toc">
+<ul>
+<li><a href="#_1">파드 실행</a><ul>
+<li><a href="#_2">자가치유</a></li>
+<li><a href="#_3">포트포워딩</a></li>
+</ul>
+</li>
+<li><a href="#_4">디플로이먼트</a></li>
+<li><a href="#_5">매니페스트로 배포</a></li>
+<li><a href="#_6">서비스로 통신</a><ul>
+<li><a href="#clusterip">파드 간 통신 — ClusterIP</a></li>
+<li><a href="#loadbalancer">외부 트래픽 — LoadBalancer</a></li>
+<li><a href="#externalname">ExternalName과 헤드리스</a></li>
+<li><a href="#_7">엔드포인트와 네임스페이스</a></li>
+</ul>
+</li>
+<li><a href="#_8">막혔던 점</a></li>
+</ul>
+</div>
+</aside>
+  </div>
+  <nav class="postnav">
+    <a class="pn prev" href="week07.html">← WEEK 07<span>쿠버네티스 기본 구조와 클러스터 구축</span></a>
+    <a class="pn next" href="week10.html">WEEK 10 →<span>컨피그맵 · 볼륨/퍼시스턴시 · 스케일링</span></a>
+  </nav>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>클라우드 프로그래밍 기말 과제 · 개인 학습 포트폴리오</p>
+    <p class="muted">AWS · Docker · Kubernetes 실습 기록</p>
+  </div>
+</footer>
+</body>
+</html>

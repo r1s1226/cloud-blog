@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WEEK 05 · 도커 레지스트리 · 볼륨 · 컴포즈 — Cloud Programming Lab</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="../index.html">☁ Cloud Programming Lab</a>
+    <nav class="topnav">
+      <a href="../index.html">홈</a>
+      <a href="../index.html#posts">강의별 기록</a>
+      <a href="../index.html#about">소개</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <div class="post-head">
+    <span class="weekbadge">WEEK 05</span>
+    <span class="post-group">Docker</span>
+    <h1>도커 레지스트리 · 볼륨 · 컴포즈</h1>
+    <div class="tags"><span class="tag">Docker</span><span class="tag">Registry</span><span class="tag">Volume</span><span class="tag">Docker Compose</span><span class="tag">골든 이미지</span></div>
+  </div>
+  <div class="post-layout">
+    <div class="post-body">
+    <p>도커 두 번째 주차. 이미지를 레지스트리에 공유(Docker Hub·사설 registry), 볼륨/바인드 마운트로 데이터 보존, 도커 컴포즈로 다중 컨테이너 실행 순서로 실습한다.</p>
+<h2 id="_1">이미지 참조 구조</h2>
+<p>이미지는 <code>레지스트리/계정/리포지터리:태그</code> 형태로 참조한다. 레지스트리를 생략하면 기본값 Docker Hub가 적용된다.</p>
+<h2 id="docker-hub">Docker Hub 푸시</h2>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>login<span class="w"> </span>--username<span class="w"> </span><span class="nv">$dockerId</span><span class="w">                          </span><span class="c1"># 허브 로그인($dockerId=계정명)</span>
+docker<span class="w"> </span>image<span class="w"> </span>tag<span class="w"> </span>image-gallery<span class="w"> </span><span class="nv">$dockerId</span>/image-gallery:v1<span class="w">  </span><span class="c1"># 계정명 포함 참조 부여</span>
+docker<span class="w"> </span>image<span class="w"> </span>push<span class="w"> </span><span class="nv">$dockerId</span>/image-gallery:v1<span class="w">               </span><span class="c1"># 레지스트리에 업로드</span>
+</code></pre></div>
+
+<p>푸시 참조에는 푸시 권한을 가진 계정명이 포함돼야 한다.</p>
+<div class="admonition capture">
+<p class="admonition-title">docker login / push 결과</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_2">사설 레지스트리</h2>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>container<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>-p<span class="w"> </span><span class="m">5000</span>:5000<span class="w"> </span>--restart<span class="w"> </span>always<span class="w"> </span>diamol/registry<span class="w">  </span><span class="c1"># 레지스트리 컨테이너 상주</span>
+</code></pre></div>
+
+<p>hosts 파일에 도메인 별명 추가:</p>
+<div class="highlight"><pre><span></span><code><span class="m">127</span>.0.0.1<span class="w"> </span>registry.local
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>image<span class="w"> </span>tag<span class="w"> </span>image-gallery<span class="w"> </span>registry.local:5000/gallery/ui:v1<span class="w">  </span><span class="c1"># 사설 도메인 참조 부여</span>
+</code></pre></div>
+
+<p>HTTPS가 아닌 레지스트리는 기본 거부되므로 데몬 설정에 허용 목록을 추가한다.</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;insecure-registries&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;registry.local:5000&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>info<span class="w">                                            </span><span class="c1"># 허용 목록 적용 확인</span>
+docker<span class="w"> </span>image<span class="w"> </span>push<span class="w"> </span>registry.local:5000/gallery/ui:v1<span class="w">   </span><span class="c1"># 사설 레지스트리에 푸시</span>
+</code></pre></div>
+
+<p><code>insecure-registries</code>는 평문 통신을 허용하므로 실습·신뢰된 내부망에서만 사용한다.</p>
+<div class="admonition capture">
+<p class="admonition-title">사설 레지스트리 push 결과</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_3">태그 전략과 골든 이미지</h2>
+<p>하나의 이미지에 <code>major.minor.patch</code>와 <code>latest</code>를 조합해 붙인다. 운영은 재현성을 위해 정확한 버전(<code>2.1.106</code>), 개발은 <code>latest</code>를 함께 둔다. 공식 이미지를 조직 표준 베이스로 캡슐화한 것이 골든 이미지다.</p>
+<h2 id="_4">컨테이너 데이터 휘발성</h2>
+<p>컨테이너 파일 시스템은 읽기 전용 이미지 레이어 위에 기록 가능 레이어가 얹힌 구조다. 변경은 기록 가능 레이어에만 쌓이고, 컨테이너를 삭제하면 함께 소멸한다.</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>container<span class="w"> </span>run<span class="w"> </span>--name<span class="w"> </span>rn1<span class="w"> </span>diamol/ch06-random-number<span class="w">  </span><span class="c1"># 파일에 무작위 숫자 기록</span>
+docker<span class="w"> </span>container<span class="w"> </span>cp<span class="w"> </span>rn1:/random/number.txt<span class="w"> </span>number1.txt<span class="w">     </span><span class="c1"># 컨테이너 → 호스트 복사</span>
+cat<span class="w"> </span>number1.txt
+docker<span class="w"> </span>container<span class="w"> </span>start<span class="w"> </span>--attach<span class="w"> </span>f1<span class="w">                          </span><span class="c1"># 재시작 시 다른 값 확인</span>
+</code></pre></div>
+
+<p>유상태(stateful) 컴포넌트는 디스크 보존이 필요하므로 볼륨 같은 영속 스토리지를 쓴다.</p>
+<h2 id="_5">볼륨</h2>
+<p>볼륨은 컨테이너와 독립된 생애주기를 갖는 스토리지다.</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>volume<span class="w"> </span>create<span class="w"> </span>todo-list<span class="w">                                                       </span><span class="c1"># 볼륨 생성</span>
+docker<span class="w"> </span>container<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>-p<span class="w"> </span><span class="m">8011</span>:80<span class="w"> </span>-v<span class="w"> </span>todo-list:<span class="nv">$target</span><span class="w"> </span>--name<span class="w"> </span>todo-v1<span class="w"> </span>diamol/ch06-todo-list<span class="w">  </span><span class="c1"># 볼륨 연결 실행($target=내부 경로)</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>container<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>t3<span class="w"> </span>--volumes-from<span class="w"> </span>todo1<span class="w"> </span>diamol/ch06-todo-list<span class="w">  </span><span class="c1"># 기존 컨테이너 볼륨 공유</span>
+docker<span class="w"> </span>container<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>todo2<span class="w"> </span>ls<span class="w"> </span>/data<span class="w">                                          </span><span class="c1"># 공유 데이터 확인</span>
+</code></pre></div>
+
+<p>Dockerfile에 <code>VOLUME &lt;target-directory&gt;</code>를 두면 컨테이너 실행 시 볼륨이 자동 생성된다.</p>
+<div class="admonition capture">
+<p class="admonition-title">볼륨 데이터 유지 확인</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_6">바인드 마운트</h2>
+<p>바인드 마운트는 호스트 디렉터리를 컨테이너에 직접 연결한다.</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>container<span class="w"> </span>run<span class="w"> </span>--mount<span class="w"> </span><span class="nv">type</span><span class="o">=</span>bind,source<span class="o">=</span><span class="nv">$source</span>,target<span class="o">=</span><span class="nv">$target</span><span class="w"> </span>-d<span class="w"> </span>-p<span class="w"> </span><span class="m">8012</span>:80<span class="w"> </span>diamol/ch06-todo-list<span class="w">  </span><span class="c1"># 호스트↔컨테이너 연결($source=호스트, $target=컨테이너)</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>container<span class="w"> </span>run<span class="w"> </span>--mount<span class="w"> </span><span class="nv">type</span><span class="o">=</span>bind,source<span class="o">=</span><span class="nv">$source</span>,target<span class="o">=</span><span class="nv">$target</span>,readonly<span class="w"> </span>diamol/ch06-todo-list<span class="w">  </span><span class="c1"># 읽기 전용 연결</span>
+</code></pre></div>
+
+<p><code>source</code>에는 OS별 형식(윈도 <code>c:\data</code>, 리눅스 <code>/data</code>)에 맞는 절대경로를 넣는다.</p>
+<h2 id="_7">도커 컴포즈</h2>
+<p>여러 컨테이너의 '원하는 상태'를 YAML에 기술하면 컴포즈가 컨테이너·네트워크·볼륨을 만든다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.7&#39;</span>
+<span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">todo-web</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">diamol/ch06-todo-list</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;8020:80&quot;</span>
+<span class="w">    </span><span class="nt">networks</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app-net</span>
+<span class="nt">networks</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">app-net</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">external</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nat</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>network<span class="w"> </span>create<span class="w"> </span>nat<span class="w">        </span><span class="c1"># 컴포즈가 쓸 네트워크 생성</span>
+docker-compose<span class="w"> </span>up<span class="w">                </span><span class="c1"># 포그라운드 실행</span>
+docker-compose<span class="w"> </span>up<span class="w"> </span>--detach<span class="w">       </span><span class="c1"># 백그라운드 실행</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--scale<span class="w"> </span><span class="nv">iotd</span><span class="o">=</span><span class="m">3</span><span class="w">       </span><span class="c1"># iotd 서비스 3개로 스케일 아웃</span>
+docker-compose<span class="w"> </span>logs<span class="w"> </span>--tail<span class="o">=</span><span class="m">1</span><span class="w"> </span>iotd<span class="w">         </span><span class="c1"># 각 컨테이너 로그 확인</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>stop<span class="w">    </span><span class="c1"># 중지</span>
+docker-compose<span class="w"> </span>start<span class="w">   </span><span class="c1"># 시작</span>
+docker-compose<span class="w"> </span>down<span class="w">    </span><span class="c1"># 컨테이너·네트워크 제거</span>
+</code></pre></div>
+
+<p><code>depends_on</code>으로 시작 순서를, <code>environment</code>·<code>secrets</code>로 설정·비밀값을 주입한다. DB가 필요하면 서비스로 함께 정의한다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">todo-db</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">diamol/postgres:11.5</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;5433:5432&quot;</span>
+<span class="w">  </span><span class="nt">todo-web</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">diamol/ch06-todo-list</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;8020:80&quot;</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">docker-compose up 실행 화면</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="dns">컨테이너 간 통신(내장 DNS)</h2>
+<p>도커 내장 DNS는 컨테이너 이름을 도메인 삼아 IP를 돌려준다. 스케일 아웃 시 모든 컨테이너 IP가 나온다.</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>container<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>image-of-the-day_image-gallery_1<span class="w"> </span>sh<span class="w">  </span><span class="c1"># 웹 컨테이너 셸 진입</span>
+nslookup<span class="w"> </span>accesslog<span class="w">                                             </span><span class="c1"># 서비스 이름으로 IP 조회</span>
+nslookup<span class="w"> </span>iotd<span class="w">                                                  </span><span class="c1"># 스케일 아웃 시 다중 IP</span>
+</code></pre></div>
+
+<p>대상이 컨테이너가 아니면 도커는 호스트로 요청을 넘겨 외부 IP를 조회한다.</p>
+<div class="admonition capture">
+<p class="admonition-title">nslookup 다중 IP 결과</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_8">막혔던 점</h2>
+<ul>
+<li>사설 레지스트리 push에서 HTTP/HTTPS 오류 → 데몬 설정에 <code>"insecure-registries":["registry.local:5000"]</code> 추가 후 도커 재시작, <code>docker info</code>로 확인.</li>
+<li>hosts 수정 권한 거부 / <code>docker login</code> 실패 → 윈도는 관리자 권한, 리눅스는 <code>sudo</code>로 수정. 로그인은 계정명 대소문자 정확히.</li>
+<li>볼륨 누락으로 데이터 소멸 / 바인드 마운트 경로 오류 → <code>-v 볼륨명:경로</code> 연결, <code>source</code>는 절대경로.</li>
+<li>컨테이너 이름 통신 실패 / <code>down</code> 후 재기동 실패 → 같은 네트워크(<code>nat</code>)에 묶고, 컴포즈는 같은 YAML이 있는 디렉터리에서 실행.</li>
+</ul>
+    </div>
+    <aside class="toc"><div class="toc-title">목차</div><div class="toc">
+<ul>
+<li><a href="#_1">이미지 참조 구조</a></li>
+<li><a href="#docker-hub">Docker Hub 푸시</a></li>
+<li><a href="#_2">사설 레지스트리</a></li>
+<li><a href="#_3">태그 전략과 골든 이미지</a></li>
+<li><a href="#_4">컨테이너 데이터 휘발성</a></li>
+<li><a href="#_5">볼륨</a></li>
+<li><a href="#_6">바인드 마운트</a></li>
+<li><a href="#_7">도커 컴포즈</a></li>
+<li><a href="#dns">컨테이너 간 통신(내장 DNS)</a></li>
+<li><a href="#_8">막혔던 점</a></li>
+</ul>
+</div>
+</aside>
+  </div>
+  <nav class="postnav">
+    <a class="pn prev" href="week04.html">← WEEK 04<span>도커 개념과 이미지 빌드 — 멀티 스테이지까지</span></a>
+    <a class="pn next" href="week06.html">WEEK 06 →<span>헬스 체크 · 다중 환경 컴포즈 · CI</span></a>
+  </nav>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>클라우드 프로그래밍 기말 과제 · 개인 학습 포트폴리오</p>
+    <p class="muted">AWS · Docker · Kubernetes 실습 기록</p>
+  </div>
+</footer>
+</body>
+</html>

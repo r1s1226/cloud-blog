@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WEEK 12 · 헬름 · 개발 워크플로(CI/CD) · 자기수복 앱 — Cloud Programming Lab</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="../index.html">☁ Cloud Programming Lab</a>
+    <nav class="topnav">
+      <a href="../index.html">홈</a>
+      <a href="../index.html#posts">강의별 기록</a>
+      <a href="../index.html#about">소개</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <div class="post-head">
+    <span class="weekbadge">WEEK 12</span>
+    <span class="post-group">Kubernetes 심화</span>
+    <h1>헬름 · 개발 워크플로(CI/CD) · 자기수복 앱</h1>
+    <div class="tags"><span class="tag">Kubernetes</span><span class="tag">Helm</span><span class="tag">CI/CD</span><span class="tag">Probe</span><span class="tag">Namespace</span></div>
+  </div>
+  <div class="post-layout">
+    <div class="post-body">
+    <p>헬름 패키징 → 개발 워크플로(도커 vs 쿠버네티스) → 자기수복(프로브·원자적 업그레이드) 순서로 실습했다.</p>
+<h2 id="_1">헬름으로 애플리케이션 패키징</h2>
+<p>헬름은 여러 YAML을 차트로 묶는 쿠버네티스 패키지 관리자다. 차트를 클러스터에 설치한 인스턴스가 릴리스이고, 템플릿 변수(<code>{{ }}</code>)는 설치 시점에 값으로 치환된다.</p>
+<div class="highlight"><pre><span></span><code>choco<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>kubernetes-helm<span class="w">        </span><span class="c1"># 헬름 설치(윈도우)</span>
+helm<span class="w"> </span>version<span class="w">                            </span><span class="c1"># 설치 확인</span>
+helm<span class="w"> </span>repo<span class="w"> </span>add<span class="w"> </span>kiamol<span class="w"> </span>https://kiamol.net<span class="w"> </span><span class="c1"># 원격 리포 추가</span>
+helm<span class="w"> </span>repo<span class="w"> </span>update<span class="w">                        </span><span class="c1"># 캐시 업데이트</span>
+helm<span class="w"> </span>search<span class="w"> </span>repo<span class="w"> </span>vweb<span class="w"> </span>--versions<span class="w">        </span><span class="c1"># 차트 검색</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">helm search repo 결과</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<p><code>helm show values</code>로 파라미터를 확인하고 <code>--set</code>으로 값을 바꿔 설치한다. <code>helm upgrade</code>로 업데이트:</p>
+<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>show<span class="w"> </span>values<span class="w"> </span>kiamol/vweb<span class="w"> </span>--version<span class="w"> </span><span class="m">1</span>.0.0<span class="w">  </span><span class="c1"># 파라미터 기본값</span>
+helm<span class="w"> </span>install<span class="w"> </span>--set<span class="w"> </span><span class="nv">servicePort</span><span class="o">=</span><span class="m">8010</span><span class="w"> </span>--set<span class="w"> </span><span class="nv">replicaCount</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>ch10-vweb<span class="w"> </span>kiamol/vweb<span class="w"> </span>--version<span class="w"> </span><span class="m">1</span>.0.0<span class="w">  </span><span class="c1"># 설치</span>
+helm<span class="w"> </span>ls<span class="w">                                                                                          </span><span class="c1"># 릴리스 확인</span>
+helm<span class="w"> </span>upgrade<span class="w"> </span>--set<span class="w"> </span><span class="nv">servicePort</span><span class="o">=</span><span class="m">8010</span><span class="w"> </span>--set<span class="w"> </span><span class="nv">replicaCount</span><span class="o">=</span><span class="m">3</span><span class="w"> </span>ch10-vweb<span class="w"> </span>kiamol/vweb<span class="w"> </span>--version<span class="w"> </span><span class="m">1</span>.0.0<span class="w">  </span><span class="c1"># 업데이트</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">helm install / helm ls 결과</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<p>차트는 매니페스트 디렉터리이고, 설정값 자리를 템플릿 변수로 둔다. <code>web-ping</code> 차트의 디플로이먼트:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apps/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Deployment</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{{</span><span class="w"> </span><span class="nv">.Release.Name</span><span class="w"> </span><span class="p p-Indicator">}}</span><span class="w">                </span><span class="c1"># 릴리스 이름이 들어갈 템플릿 변수</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">containers</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app</span>
+<span class="w">      </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kiamol/ch10-web-ping</span>
+<span class="w">      </span><span class="nt">env</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TARGET</span>
+<span class="w">          </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{{</span><span class="w"> </span><span class="nv">.Values.targetUrl</span><span class="w"> </span><span class="p p-Indicator">}}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INTERVAL</span>
+<span class="w">          </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{{</span><span class="w"> </span><span class="nv">.Values.pingIntervalMilliseconds | quote</span><span class="w"> </span><span class="p p-Indicator">}}</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch10
+helm<span class="w"> </span>lint<span class="w"> </span>web-ping<span class="w">                                  </span><span class="c1"># 차트 유효성 검증</span>
+helm<span class="w"> </span>install<span class="w"> </span>wp1<span class="w"> </span>web-ping/<span class="w">                           </span><span class="c1"># 차트 디렉터리에서 설치</span>
+helm<span class="w"> </span>install<span class="w"> </span>--set<span class="w"> </span><span class="nv">targetUrl</span><span class="o">=</span>kiamol.net<span class="w"> </span>wp2<span class="w"> </span>web-ping/<span class="w">  </span><span class="c1"># 값을 달리한 릴리스</span>
+</code></pre></div>
+
+<p>차트를 공유하려면 리포지터리가 필요하다. 차트뮤지엄을 비공개 리포로 띄우고 패키징한 차트를 업로드:</p>
+<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>repo<span class="w"> </span>add<span class="w"> </span>stable<span class="w"> </span>https://charts.helm.sh/stable<span class="w">  </span><span class="c1"># 공식 헬름 리포</span>
+<span class="c1"># 차트뮤지엄 설치</span>
+helm<span class="w"> </span>install<span class="w"> </span>--set<span class="w"> </span>service.type<span class="o">=</span>LoadBalancer<span class="w"> </span>--set<span class="w"> </span>service.externalPort<span class="o">=</span><span class="m">8008</span><span class="w"> </span>--set<span class="w"> </span>env.open.DISABLE_API<span class="o">=</span><span class="nb">false</span><span class="w"> </span>repo<span class="w"> </span>stable/chartmuseum<span class="w"> </span>--version<span class="w"> </span><span class="m">2</span>.13.0<span class="w"> </span>--wait
+helm<span class="w"> </span>package<span class="w"> </span>web-ping<span class="w">                                </span><span class="c1"># 차트 패키징</span>
+<span class="c1"># 패키징된 차트 업로드</span>
+curl<span class="w"> </span>--data-binary<span class="w"> </span><span class="s2">&quot;@web-ping-0.1.0.tgz&quot;</span><span class="w"> </span><span class="k">$(</span>kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </span>repo-chartmuseum<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;http://{.status.loadBalancer.ingress[0].*}:8008/api/charts&#39;</span><span class="k">)</span>
+helm<span class="w"> </span>install<span class="w"> </span>-f<span class="w"> </span>web-ping-values.yaml<span class="w"> </span>wp3<span class="w"> </span>local/web-ping<span class="w">  </span><span class="c1"># 설정 파일로 로컬 리포 차트 설치</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">차트뮤지엄 업로드 결과</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<p>의존 차트는 <code>condition</code>으로 켜고 끈다. 상위 차트(<code>pi</code>)가 하위 차트(<code>vweb</code>, <code>proxy</code>)를 참조하되 프록시는 필요할 때만 설치:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v2</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pi</span>
+<span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1.0</span>
+<span class="nt">dependencies</span><span class="p">:</span><span class="w">                         </span><span class="c1"># 이 차트가 의존하는 다른 차트</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vweb</span>
+<span class="w">    </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.0.0</span>
+<span class="w">    </span><span class="nt">repository</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://kiamol.net</span><span class="w">    </span><span class="c1"># 차트 출처가 리포지터리</span>
+<span class="w">    </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vweb.enabled</span><span class="w">           </span><span class="c1"># 필요할 때만 설치</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">proxy</span>
+<span class="w">    </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1.0</span>
+<span class="w">    </span><span class="nt">repository</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">file://../proxy</span><span class="w">       </span><span class="c1"># 로컬 디렉터리에 있는 차트</span>
+<span class="w">    </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">proxy.enabled</span><span class="w">          </span><span class="c1"># 필요할 때만 설치</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>dependency<span class="w"> </span>build<span class="w"> </span>pi<span class="w">                            </span><span class="c1"># 하위 차트 빌드(내려받기)</span>
+helm<span class="w"> </span>install<span class="w"> </span>pi1<span class="w"> </span>./pi<span class="w"> </span>--dry-run<span class="w">                     </span><span class="c1"># 오류 여부 검증</span>
+helm<span class="w"> </span>install<span class="w"> </span>--set<span class="w"> </span><span class="nv">serviceType</span><span class="o">=</span>ClusterIP<span class="w"> </span>--set<span class="w"> </span>proxy.enabled<span class="o">=</span><span class="nb">true</span><span class="w"> </span>pi2<span class="w"> </span>./pi<span class="w">  </span><span class="c1"># 프록시 포함 설치</span>
+</code></pre></div>
+
+<h2 id="vs">개발 워크플로 — 도커 vs 쿠버네티스</h2>
+<p>도커 워크플로는 내부 주기에 도커가 깊이 관여하고, 쿠버네티스 워크플로는 내부 주기에서 도커를 빼고 외부 주기(클러스터 빌드)에서만 컨테이너를 쓴다.</p>
+<p>도커 워크플로 — 로컬에서 빌드·실행하고 같은 이미지를 쿠버네티스에 배치. 로컬 이미지를 쓰도록 <code>imagePullPolicy: IfNotPresent</code> 지정:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch11
+docker-compose<span class="w"> </span>-f<span class="w"> </span>bulletin-board/docker-compose.yml<span class="w"> </span>build<span class="w">  </span><span class="c1"># 빌드</span>
+docker-compose<span class="w"> </span>-f<span class="w"> </span>bulletin-board/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w">   </span><span class="c1"># 실행</span>
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>bulletin-board/kubernetes/<span class="w">                 </span><span class="c1"># 클러스터에 배치</span>
+<span class="c1"># 소스 수정 후 재빌드 → 파드 삭제로 새 버전 교체</span>
+docker-compose<span class="w"> </span>-f<span class="w"> </span>bulletin-board/docker-compose.yml<span class="w"> </span>build
+kubectl<span class="w"> </span>delete<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>bulletin-board
+</code></pre></div>
+
+<p>쿠버네티스 워크플로 — 로컬에서 도커를 배제하고 커밋하면 클러스터가 빌드한다. 깃 서버 Gogs와 BuildKit+buildpacks를 클러스터에 띄운다:</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>infrastructure/gogs.yaml<span class="w">                   </span><span class="c1"># 깃 서버 배치</span>
+git<span class="w"> </span>push<span class="w"> </span>gogs<span class="w">                                               </span><span class="c1"># 코드 푸시</span>
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>infrastructure/buildkitd.yaml<span class="w">             </span><span class="c1"># BuildKit 배치</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/buildkitd<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;git version &amp;&amp; buildctl --version&#39;</span><span class="w">  </span><span class="c1"># 도구 확인</span>
+<span class="c1"># Dockerfile 없이 buildpacks로 빌드</span>
+buildctl<span class="w"> </span>build<span class="w"> </span>--frontend<span class="o">=</span>gateway.v0<span class="w"> </span>--opt<span class="w"> </span><span class="nv">source</span><span class="o">=</span>kiamol/buildkit-buildpacks<span class="w"> </span>--local<span class="w"> </span><span class="nv">context</span><span class="o">=</span>src<span class="w"> </span>--output<span class="w"> </span><span class="nv">type</span><span class="o">=</span>image,name<span class="o">=</span>kiamol/ch11-bulletin-board:buildkit
+</code></pre></div>
+
+<p>네임스페이스는 리소스를 묶는 단위로, 삭제하면 소속 리소스도 함께 삭제된다. 컨텍스트는 접속 클러스터와 기본 네임스페이스를 묶은 것이다:</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span class="w"> </span>kiamol-ch11-test<span class="w">                  </span><span class="c1"># 네임스페이스 생성</span>
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep.yaml<span class="w"> </span>--namespace<span class="w"> </span>kiamol-ch11-test<span class="w">   </span><span class="c1"># 그 안에 배치</span>
+kubectl<span class="w"> </span>config<span class="w"> </span>set-context<span class="w"> </span>--current<span class="w"> </span>--namespace<span class="o">=</span>kiamol-ch11-test<span class="w">  </span><span class="c1"># 기본 네임스페이스 변경</span>
+kubectl<span class="w"> </span>config<span class="w"> </span>view<span class="w">                                        </span><span class="c1"># 접속 설정 확인</span>
+kubectl<span class="w"> </span>delete<span class="w"> </span>namespace<span class="w"> </span>kiamol-ch11-uat<span class="w">                   </span><span class="c1"># 삭제 → 소속 리소스도 삭제</span>
+</code></pre></div>
+
+<div class="admonition warning">
+<p class="admonition-title">네임스페이스 삭제는 곧 일괄 삭제</p>
+<p><code>kubectl delete namespace</code>는 그 안의 모든 리소스를 한꺼번에 지운다. 삭제 전 <code>kubectl get all -n &lt;네임스페이스&gt;</code>로 내용을 확인한다.</p>
+</div>
+<h2 id="_2">자기수복형 애플리케이션</h2>
+<p>쿠버네티스는 컨테이너 실행 여부는 알지만 내부 애플리케이션 정상 여부는 모른다. 컨테이너 프로브로 이를 검사한다. 레디니스 실패 시 서비스 엔드포인트에서 제외, 리브니스 실패 시 컨테이너 재시작이다.</p>
+<p><code>numbers-api</code>는 몇 번 호출하면 고장 나는 앱이다. 레디니스 프로브를 붙이면 고장 난 파드가 엔드포인트에서 빠진다:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">containers</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kiamol/ch03-numbers-api</span>
+<span class="w">      </span><span class="nt">readinessProbe</span><span class="p">:</span><span class="w">                 </span><span class="c1"># 프로브는 컨테이너 수준에서 정의된다</span>
+<span class="w">        </span><span class="nt">httpGet</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/healthz</span><span class="w">              </span><span class="c1"># 이 URL에 HTTP GET 요청을 보낸다</span>
+<span class="w">          </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span>
+<span class="w">        </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span><span class="w">              </span><span class="c1"># 5초에 한 번씩 상태를 확인한다</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch12
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>numbers/<span class="w">                                  </span><span class="c1"># API 배치</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>endpoints<span class="w"> </span>numbers-api<span class="w">                          </span><span class="c1"># 엔드포인트 포함 확인</span>
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>numbers/update/api-with-readiness.yaml<span class="w">    </span><span class="c1"># 레디니스 프로브 적용</span>
+curl<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span>api-url.txt<span class="k">)</span><span class="s2">/rng&quot;</span><span class="w">                              </span><span class="c1"># 호출해 고장 유발</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>endpoints<span class="w"> </span>numbers-api<span class="w">                          </span><span class="c1"># 엔드포인트에서 제외 확인</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">get endpoints — 레디니스로 제외</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<p>리브니스 프로브를 더하면 고장 난 파드가 재시작된다. <code>initialDelaySeconds</code>로 첫 체크를 늦추고 <code>failureThreshold</code>로 실패 허용 횟수를 정한다:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">livenessProbe</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">httpGet</span><span class="p">:</span><span class="w">                   </span><span class="c1"># 레디니스 프로브와 마찬가지로</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/healthz</span><span class="w">           </span><span class="c1"># HTTP GET 요청으로 상태를 체크</span>
+<span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span>
+<span class="w">  </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="w">  </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span><span class="w">    </span><span class="c1"># 첫 번째 상태 체크 전 10초 대기</span>
+<span class="w">  </span><span class="nt">failureThreshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">        </span><span class="c1"># 상태 체크 실패 두 번까지는 용인</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>numbers/update/api-with-readiness-and-liveness.yaml<span class="w">  </span><span class="c1"># 레디니스+리브니스 적용</span>
+curl<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span>api-url.txt<span class="k">)</span><span class="s2">/rng&quot;</span><span class="w">                                         </span><span class="c1"># 고장 유발</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>numbers-api<span class="w">                                   </span><span class="c1"># RESTARTS 증가 확인</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">리브니스로 파드 재시작</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<p>비-HTTP 컴포넌트는 다른 방식을 쓴다. PostgreSQL은 레디니스에 포트 확인(<code>tcpSocket</code>), 리브니스에 명령 실행(<code>exec</code>)을 둔다:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">readinessProbe</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">tcpSocket</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5432</span><span class="w">             </span><span class="c1"># DB가 이 포트를 주시하는지 체크</span>
+<span class="w">  </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="nt">livenessProbe</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">exec</span><span class="p">:</span><span class="w">                    </span><span class="c1"># 명령행 도구를 실행하여 동작 여부 체크</span>
+<span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;pg_isready&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;-h&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="w">  </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+</code></pre></div>
+
+<p>헬름 <code>--atomic</code>은 설치·업그레이드 실패 시 자동으로 이전 상태로 롤백한다:</p>
+<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>install<span class="w"> </span>--atomic<span class="w"> </span>todo-list<span class="w"> </span>todo-list/helm/v1/todo-list/<span class="w">                </span><span class="c1"># 원자적 설치</span>
+helm<span class="w"> </span>upgrade<span class="w"> </span>--atomic<span class="w"> </span>--timeout<span class="w"> </span>30s<span class="w"> </span>todo-list<span class="w"> </span>todo-list/helm/v2/todo-list/<span class="w">  </span><span class="c1"># 잘못된 업그레이드 → 자동 롤백</span>
+<span class="c1"># 이미지가 롤백으로 그대로인지 확인</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>todo-list-db<span class="w"> </span>-o<span class="o">=</span>custom-columns<span class="o">=</span>NAME:.metadata.name,STATUS:.status.phase,IMAGE:.spec.containers<span class="o">[</span><span class="m">0</span><span class="o">]</span>.image
+</code></pre></div>
+
+<p>헬름 훅으로 생애 주기 특정 시점에 작업을 끼운다. <code>helm.sh/hook: test</code>는 설치 후 스모크 테스트를 실행:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">batch/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Job</span><span class="w">                  </span><span class="c1"># 잡 정의</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">annotations</span><span class="p">:</span>
+<span class="w">    </span><span class="s">&quot;helm.sh/hook&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span><span class="w">   </span><span class="c1"># 헬름 test로 실행할 잡임을 명기</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">completions</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">backoffLimit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">          </span><span class="c1"># 한 번만 실행하며 재시도하지 않음</span>
+<span class="w">  </span><span class="nt">template</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">spec</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">containers</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres:11.8-alpine</span>
+<span class="w">          </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;psql&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;-c&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;SELECT</span><span class="nv"> </span><span class="s">COUNT(*)</span><span class="nv"> </span><span class="s">FROM</span><span class="nv"> </span><span class="s">\&quot;public\&quot;.\&quot;ToDos\&quot;&quot;</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>helm<span class="w"> </span><span class="nb">test</span><span class="w"> </span>todo-list<span class="w">                             </span><span class="c1"># 스모크 테스트 실행</span>
+kubectl<span class="w"> </span>logs<span class="w"> </span>-l<span class="w"> </span>job-name<span class="o">=</span>todo-list-db-test<span class="w">      </span><span class="c1"># 테스트 잡 로그</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">helm test 통과</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_3">막혔던 점</h2>
+<ul>
+<li>(윈도우) <code>curl --data-binary</code> 업로드 실패 → <code>curl</code>이 <code>Invoke-WebRequest</code> 앨리어스. <code>Remove-Item Alias:curl -ErrorAction Ignore</code>로 실제 <code>curl.exe</code> 사용.</li>
+<li>차트 설치 후 로그가 비어 있음 → 일정 간격 앱이라 첫 요청 전. <code>kubectl logs -l app=web-ping --tail 1</code>로 확인.</li>
+<li>의존 차트 미설치로 상위 차트 설치 실패 → <code>helm dependency build pi</code>로 하위 차트 먼저 내려받기.</li>
+<li>다른 네임스페이스 파드가 안 보임 → <code>-n &lt;네임스페이스&gt;</code> 또는 <code>--all-namespaces</code> 지정.</li>
+<li>컨테이너는 Running인데 앱은 고장 → 레디니스/리브니스 프로브 추가.</li>
+<li>헬름 업그레이드가 멈춘 듯 보임 → <code>--atomic</code>이 레디니스 통과를 대기하는 정상 동작. <code>--timeout</code> 후 자동 롤백.</li>
+</ul>
+    </div>
+    <aside class="toc"><div class="toc-title">목차</div><div class="toc">
+<ul>
+<li><a href="#_1">헬름으로 애플리케이션 패키징</a></li>
+<li><a href="#vs">개발 워크플로 — 도커 vs 쿠버네티스</a></li>
+<li><a href="#_2">자기수복형 애플리케이션</a></li>
+<li><a href="#_3">막혔던 점</a></li>
+</ul>
+</div>
+</aside>
+  </div>
+  <nav class="postnav">
+    <a class="pn prev" href="week11.html">← WEEK 11<span>멀티컨테이너 파드 · 스테이트풀셋 · 롤아웃/롤백</span></a>
+    <a class="pn next" href="week13.html">WEEK 13 →<span>중앙 로그 관리 · 모니터링 · 인그레스</span></a>
+  </nav>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>클라우드 프로그래밍 기말 과제 · 개인 학습 포트폴리오</p>
+    <p class="muted">AWS · Docker · Kubernetes 실습 기록</p>
+  </div>
+</footer>
+</body>
+</html>

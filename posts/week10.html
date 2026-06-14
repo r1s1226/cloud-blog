@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WEEK 10 · 컨피그맵 · 볼륨/퍼시스턴시 · 스케일링 — Cloud Programming Lab</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="../index.html">☁ Cloud Programming Lab</a>
+    <nav class="topnav">
+      <a href="../index.html">홈</a>
+      <a href="../index.html#posts">강의별 기록</a>
+      <a href="../index.html#about">소개</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <div class="post-head">
+    <span class="weekbadge">WEEK 10</span>
+    <span class="post-group">Kubernetes 입문</span>
+    <h1>컨피그맵 · 볼륨/퍼시스턴시 · 스케일링</h1>
+    <div class="tags"><span class="tag">Kubernetes</span><span class="tag">ConfigMap</span><span class="tag">PV/PVC</span><span class="tag">ReplicaSet</span><span class="tag">DaemonSet</span></div>
+  </div>
+  <div class="post-layout">
+    <div class="post-body">
+    <p>쿠버네티스 중급. 컨피그맵/비밀값으로 설정 주입 → 볼륨·마운트·클레임으로 데이터 보존 → 레플리카셋·디플로이먼트·데몬셋으로 스케일링 순서로 실습했다.</p>
+<h2 id="_1">컨피그맵과 비밀값</h2>
+<p><strong>컨피그맵(ConfigMap)</strong> 과 <strong>비밀값(Secret)</strong> 은 설정을 코드와 분리해 보관하다가 파드로 전달한다. 모든 컨테이너에는 기본 환경 변수가 있다.</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch04
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/sleep.yaml<span class="w">          </span><span class="c1"># 설정값 없이 sleep 파드 실행</span>
+kubectl<span class="w"> </span><span class="nb">wait</span><span class="w"> </span>--for<span class="o">=</span><span class="nv">condition</span><span class="o">=</span>Ready<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>sleep
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>printenv<span class="w"> </span>HOSTNAME<span class="w"> </span>KIAMOL_CHAPTER<span class="w">   </span><span class="c1"># 기본 환경 변수 확인</span>
+</code></pre></div>
+
+<h3 id="_2">환경 변수로 주입</h3>
+<p><code>env</code> 직접 지정, <code>valueFrom.configMapKeyRef</code>(특정 항목), <code>envFrom.configMapRef</code>(전체)로 끌어올 수 있다. 컨피그맵은 리터럴·env 파일·YAML로 만든다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>configmap<span class="w"> </span>sleep-config-literal<span class="w"> </span>--from-literal<span class="o">=</span>kiamol.section<span class="o">=</span><span class="s1">&#39;4.1&#39;</span><span class="w">  </span><span class="c1"># 리터럴로 생성</span>
+kubectl<span class="w"> </span>describe<span class="w"> </span>cm<span class="w"> </span>sleep-config-literal
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/sleep-with-configMap-env.yaml<span class="w">                </span><span class="c1"># 참조하도록 파드 재배치</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;printenv | grep &quot;^KIAMOL&quot;&#39;</span><span class="w">      </span><span class="c1"># 주입 확인</span>
+kubectl<span class="w"> </span>create<span class="w"> </span>configmap<span class="w"> </span>sleep-config-env-file<span class="w"> </span>--from-env-file<span class="o">=</span>sleep/ch04.env<span class="w">  </span><span class="c1"># env 파일로도 생성</span>
+</code></pre></div>
+
+<p><img alt="kubectl로 컨피그맵 생성" src="../assets/img/week10-kubectl-cm.png" /><br />
+<em>▲ <code>kubectl create configmap ... --dry-run=client -o yaml</code> 로 컨피그맵을 생성해 본 결과(로컬 실행). <code>data</code> 아래에 키-값으로 설정이 담긴다.</em></p>
+<div class="admonition capture">
+<p class="admonition-title">printenv 결과</p>
+<p>(<code>printenv | grep "^KIAMOL"</code> 로 환경 변수가 주입된 화면과 <code>describe cm</code> 결과 캡처)</p>
+</div>
+<h3 id="_3">볼륨 마운트로 설정 파일 주입</h3>
+<p>컨피그맵을 파일로도 주입할 수 있다. 컨피그맵은 디렉터리, 각 항목은 파일이 된다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ConfigMap</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">todo-web-config-dev</span>
+<span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">config.json</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|-</span><span class="w">          </span><span class="c1"># 키 이름이 곧 파일 이름이 된다</span>
+<span class="w">    </span><span class="no">{</span>
+<span class="w">      </span><span class="no">&quot;ConfigController&quot;: {</span>
+<span class="w">        </span><span class="no">&quot;Enabled&quot;: true</span>
+<span class="w">      </span><span class="no">}</span>
+<span class="w">    </span><span class="no">}</span>
+</code></pre></div>
+
+<p>파드는 <code>volumeMounts</code> + <code>volumes</code> 로 마운트한다. <code>readOnly: true</code> 로 읽기 전용, <code>items</code> 로 특정 항목만 마운트할 수 있다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">containers</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">web</span>
+<span class="w">      </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kiamol/ch04-todo-list</span>
+<span class="w">      </span><span class="nt">volumeMounts</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">config</span>
+<span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/app/config&quot;</span><span class="w">   </span><span class="c1"># 볼륨이 마운트될 경로</span>
+<span class="w">          </span><span class="nt">readOnly</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">config</span><span class="w">                   </span><span class="c1"># 볼륨 마운트 이름과 일치</span>
+<span class="w">      </span><span class="nt">configMap</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">todo-web-config-dev</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>todo-list/configMaps/todo-web-config-dev.yaml
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/todo-web<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;ls -l /app/config/*.json&#39;</span>
+<span class="c1"># 읽기 전용 검증 - 실패가 정상이다</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/todo-web<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;echo ch04 &gt;&gt; /app/config/config.json&#39;</span>
+</code></pre></div>
+
+<div class="admonition warning">
+<p class="admonition-title">볼륨 마운트로 주입한 컨피그맵의 갱신은 지연된다</p>
+<p>볼륨 마운트로 주입한 설정 파일은 반영까지 시간이 걸린다(실습 <code>sleep 120</code>). 환경 변수로 주입한 값은 파드를 재배포해야 바뀐다.</p>
+</div>
+<div class="admonition capture">
+<p class="admonition-title">읽기 전용 쓰기 실패</p>
+<p>(읽기 전용 볼륨에 <code>echo ... &gt;&gt;</code> 시 권한 오류가 나는 화면 캡처)</p>
+</div>
+<h2 id="_4">볼륨·마운트·클레임</h2>
+<p>컨테이너 파일시스템의 기록 레이어는 컨테이너 생애주기를 따른다. 컨테이너가 재시작되면 기록한 파일이 사라진다.</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch05
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/sleep.yaml
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;echo ch05 &gt; /file.txt; ls /*.txt&#39;</span><span class="w">  </span><span class="c1"># 파일 생성</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>killall5<span class="w">                              </span><span class="c1"># 컨테이너 재시작</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>ls<span class="w"> </span>/*.txt<span class="w">                                 </span><span class="c1"># 파일이 사라짐</span>
+</code></pre></div>
+
+<h3 id="emptydir-hostpath">emptyDir와 hostPath</h3>
+<p>emptyDir는 파드에 딸린 빈 디렉터리로, 같은 파드 안에서 컨테이너가 교체돼도 유지된다(파드가 다른 노드로 옮겨가면 소멸).</p>
+<div class="highlight"><pre><span></span><code><span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">containers</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sleep</span>
+<span class="w">      </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kiamol/ch03-sleep</span>
+<span class="w">      </span><span class="nt">volumeMounts</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data</span>
+<span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/data</span>
+<span class="w">  </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data</span>
+<span class="w">      </span><span class="nt">emptyDir</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span><span class="w">            </span><span class="c1"># 유형은 공디렉터리</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/sleep-with-emptyDir.yaml
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;echo ch05 &gt; /data/file.txt; ls /data&#39;</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>killall5
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>cat<span class="w"> </span>/data/file.txt<span class="w">   </span><span class="c1"># 컨테이너가 바뀌어도 유지됨</span>
+</code></pre></div>
+
+<p>hostPath는 노드의 디렉터리를 가리킨다. <code>type: DirectoryOrCreate</code> 는 없으면 생성한다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cache-volume</span>
+<span class="w">    </span><span class="nt">hostPath</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/volumes/nginx/cache</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DirectoryOrCreate</span>
+</code></pre></div>
+
+<div class="admonition warning">
+<p class="admonition-title">hostPath 의 path: / 는 보안 위험</p>
+<p>노드 루트(<code>path: /</code>, <code>type: Directory</code>)를 통째로 마운트하면 컨테이너가 노드 파일시스템 전체에 접근한다. 필요하면 <code>subPath</code> 로 범위를 좁힌다.</p>
+</div>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>pi/nginx-with-hostPath.yaml
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/pi-proxy<span class="w"> </span>--<span class="w"> </span>ls<span class="w"> </span>-l<span class="w"> </span>/data/nginx/cache
+</code></pre></div>
+
+<h3 id="pv-pvc">영구볼륨(PV)과 영구볼륨클레임(PVC)</h3>
+<p>클러스터 전체에서 접근 가능한 스토리지는 <strong>PV</strong>(클러스터가 제공)와 <strong>PVC</strong>(애플리케이션이 요청)로 쓴다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PersistentVolume</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pv01</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">capacity</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">storage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50Mi</span><span class="w">             </span><span class="c1"># 볼륨 용량</span>
+<span class="w">  </span><span class="nt">accessModes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ReadWriteOnce</span><span class="w">           </span><span class="c1"># 파드 하나에서만 사용 가능</span>
+<span class="w">  </span><span class="nt">nfs</span><span class="p">:</span><span class="w">                        </span><span class="c1"># NFS 등 분산 스토리지 사용</span>
+<span class="w">    </span><span class="nt">server</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nfs.my.network</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/kubernetes-volumes&quot;</span>
+<span class="nn">---</span>
+<span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PersistentVolumeClaim</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres-pvc</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">accessModes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ReadWriteOnce</span>
+<span class="w">  </span><span class="nt">resources</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">requests</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">storage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40Mi</span><span class="w">           </span><span class="c1"># 요청하는 용량</span>
+<span class="w">  </span><span class="nt">storageClassName</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w">        </span><span class="c1"># 스토리지 유형 미지정</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>todo-list/persistentVolume.yaml
+kubectl<span class="w"> </span>get<span class="w"> </span>pv
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>todo-list/postgres-persistentVolumeClaim.yaml<span class="w">   </span><span class="c1"># 조건 맞으면 Bound</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pvc
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>todo-list/postgres-persistentVolumeClaim-too-big.yaml<span class="w">  </span><span class="c1"># 맞는 PV 없으면 Pending</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pvc
+</code></pre></div>
+
+<p>PVC를 볼륨으로 쓰는 파드(<code>persistentVolumeClaim.claimName</code>)에 PostgreSQL을 올리면 DB 파드를 삭제해도 데이터가 유지된다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>todo-list/postgres/
+kubectl<span class="w"> </span>delete<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>todo-db<span class="w">   </span><span class="c1"># 파드를 지워도</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>ls<span class="w"> </span>-l<span class="w"> </span>/node-root/volumes/pv01/pg_wal<span class="w">   </span><span class="c1"># 데이터는 남아 있다</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">kubectl get pv / pvc (Bound·Pending)</p>
+<p>(PVC가 Bound 된 모습과 용량이 큰 PVC가 Pending 으로 남는 모습을 함께 캡처)</p>
+</div>
+<h2 id="_5">스케일링</h2>
+<p>컨트롤러는 파드 템플릿으로 동일한 파드의 레플리카를 여러 개 만든다. 스케일링은 파드를 늘리는 것이다.</p>
+<p>레플리카셋(ReplicaSet)은 파드를 직접 관리한다. 디플로이먼트는 그 위에 관리 계층을 얹어, 업데이트 시 새 레플리카셋을 만들고 기존 레플리카셋을 0으로 줄여 롤아웃/롤백을 처리한다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apps/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ReplicaSet</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whoami-web</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">selector</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whoami-web</span>
+<span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">           </span><span class="c1"># 일반적인 파드 정의가 이어진다</span>
+<span class="w">    </span><span class="nt">metadata</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">labels</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whoami-web</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch06
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>whoami/
+kubectl<span class="w"> </span>get<span class="w"> </span>replicaset<span class="w"> </span>whoami-web
+kubectl<span class="w"> </span>delete<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>whoami-web<span class="w">              </span><span class="c1"># 레플리카셋이 대체 파드 생성</span>
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>whoami/update/whoami-replicas-3.yaml<span class="w">  </span><span class="c1"># 레플리카 3으로 증가</span>
+<span class="c1"># 서비스로 여러 번 요청해 로드밸런싱 확인</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;for i in 1 2 3; do curl -w &quot;\n&quot; -s http://whoami-web:8088; done;&#39;</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">로드밸런싱 응답</p>
+<p>(같은 서비스에 여러 번 요청했을 때 서로 다른 파드 호스트 이름이 응답하는 출력 캡처)</p>
+</div>
+<h3 id="kubectl-scale-vs-apply">kubectl scale vs apply</h3>
+<p><code>kubectl scale</code> 은 즉석 변경이며, 이후 <code>apply</code> 하면 매니페스트 값으로 원복된다. <code>--show-labels</code> 로 파드와 레플리카셋이 <code>pod-template-hash</code> 로 묶임을 확인한다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>rs<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>pi-web
+kubectl<span class="w"> </span>scale<span class="w"> </span>--replicas<span class="o">=</span><span class="m">4</span><span class="w"> </span>deploy/pi-web<span class="w">              </span><span class="c1"># 즉석 스케일</span>
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>pi/web/update/web-replicas-3.yaml<span class="w">    </span><span class="c1"># 매니페스트 값(3)으로 원복</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>rs<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>pi-web<span class="w"> </span>--show-labels
+</code></pre></div>
+
+<h3 id="_6">데몬셋</h3>
+<p>데몬셋(DaemonSet)은 모든 노드(또는 셀렉터 일치 노드)에서 노드당 파드 하나를 동작시킨다. 로그·지표 수집 같은 인프라성 작업에 적합하다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apps/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DaemonSet</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pi-proxy</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">selector</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pi-proxy</span>
+<span class="w">  </span><span class="nt">template</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">metadata</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">labels</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pi-proxy</span>
+<span class="w">    </span><span class="nt">spec</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># ... 파드 정의 ...</span>
+<span class="w">      </span><span class="nt">nodeSelector</span><span class="p">:</span><span class="w">        </span><span class="c1"># 특정 노드에서만 실행</span>
+<span class="w">        </span><span class="nt">kiamol</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ch06</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>pi/proxy/daemonset/nginx-ds.yaml
+kubectl<span class="w"> </span>delete<span class="w"> </span>deploy<span class="w"> </span>pi-proxy<span class="w">            </span><span class="c1"># 디플로이먼트를 데몬셋으로 교체</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>daemonset<span class="w"> </span>pi-proxy
+kubectl<span class="w"> </span>delete<span class="w"> </span>ds<span class="w"> </span>pi-proxy<span class="w"> </span>--cascade<span class="o">=</span><span class="nb">false</span><span class="w">  </span><span class="c1"># 관리 대상 파드는 남기고 데몬셋만 삭제</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">kubectl get ds</p>
+<p>(DESIRED/CURRENT/READY 수가 노드 수와 일치하는 화면 캡처)</p>
+</div>
+<h2 id="_7">막혔던 점</h2>
+<ul>
+<li>컨피그맵 수정이 반영 안 됨 → 볼륨 마운트는 지연 반영(잠시 대기), 환경 변수는 파드 재배포(<code>apply</code>) 필요.</li>
+<li>읽기 전용 볼륨 쓰기 실패 → <code>readOnly: true</code> 의 의도된 동작. 실패가 정상.</li>
+<li>재시작/파드 삭제 후 파일 소멸 → 컨테이너 재시작은 emptyDir, 파드·노드 교체는 PV/PVC로 보존.</li>
+<li>PVC가 Pending → 요청 용량·accessModes에 맞는 PV가 없을 때. 용량을 PV capacity 이하로 맞춤. too-big PVC의 Pending은 정상.</li>
+<li>PV 디렉터리 없어 DB 실패 → hostPath sleep 파드로 <code>mkdir -p /node-root/volumes/pv01</code> 선행 후 배치.</li>
+<li>scale이 apply 후 원복 / 데몬셋 파드 0개 → 영구 변경은 매니페스트 replicas 수정. 데몬셋은 <code>kubectl label node ... kiamol=ch06</code> 로 셀렉터 일치.</li>
+</ul>
+    </div>
+    <aside class="toc"><div class="toc-title">목차</div><div class="toc">
+<ul>
+<li><a href="#_1">컨피그맵과 비밀값</a><ul>
+<li><a href="#_2">환경 변수로 주입</a></li>
+<li><a href="#_3">볼륨 마운트로 설정 파일 주입</a></li>
+</ul>
+</li>
+<li><a href="#_4">볼륨·마운트·클레임</a><ul>
+<li><a href="#emptydir-hostpath">emptyDir와 hostPath</a></li>
+<li><a href="#pv-pvc">영구볼륨(PV)과 영구볼륨클레임(PVC)</a></li>
+</ul>
+</li>
+<li><a href="#_5">스케일링</a><ul>
+<li><a href="#kubectl-scale-vs-apply">kubectl scale vs apply</a></li>
+<li><a href="#_6">데몬셋</a></li>
+</ul>
+</li>
+<li><a href="#_7">막혔던 점</a></li>
+</ul>
+</div>
+</aside>
+  </div>
+  <nav class="postnav">
+    <a class="pn prev" href="week09.html">← WEEK 09<span>파드 · 디플로이먼트 · 서비스(네트워크)</span></a>
+    <a class="pn next" href="week11.html">WEEK 11 →<span>멀티컨테이너 파드 · 스테이트풀셋 · 롤아웃/롤백</span></a>
+  </nav>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>클라우드 프로그래밍 기말 과제 · 개인 학습 포트폴리오</p>
+    <p class="muted">AWS · Docker · Kubernetes 실습 기록</p>
+  </div>
+</footer>
+</body>
+</html>

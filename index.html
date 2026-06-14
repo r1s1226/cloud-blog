@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloud Programming Lab — 클라우드 프로그래밍 학습 기록 — AWS · Docker · Kubernetes</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="index.html">☁ Cloud Programming Lab</a>
+    <nav class="topnav">
+      <a href="index.html">홈</a>
+      <a href="index.html#posts">강의별 기록</a>
+      <a href="index.html#about">소개</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+<section class="hero">
+  <p class="hero-kicker">CLOUD PROGRAMMING · 학습 포트폴리오</p>
+  <h1 class="hero-title">클라우드 프로그래밍 학습 기록 — AWS · Docker · Kubernetes</h1>
+  <div class="hero-intro"><p>한 학기 동안 <strong>클라우드 프로그래밍</strong> 수업에서 배운 내용과 직접 따라 한 실습 과정을 주차별로 정리한 학습 포트폴리오입니다.</p>
+<p>수업은 <strong>클라우드의 기본 개념</strong>에서 출발해 <strong>AWS(EC2·VPC)</strong> → <strong>Docker(컨테이너·이미지·컴포즈)</strong> → <strong>Kubernetes(파드부터 RBAC·오퍼레이터까지)</strong> 로 이어졌습니다. 각 글에는 ① 개념 정리, ② 실습 과정(명령어·설정), ③ 실습 중 만난 문제와 해결 방법, ④ 회고를 담았습니다.</p>
+<blockquote>
+<p>실습 환경: Windows 11 + VMware/Ubuntu, Docker Desktop, Rancher Desktop·K3s 기반 단일 노드 쿠버네티스. 예제는 『AWS 교과서』(길벗)와 <em>Learn Docker / Kubernetes in a Month of Lunches</em>(diamol·kiamol)를 따랐습니다.</p>
+</blockquote></div>
+  <div class="stackbadges">
+    <span class="sb sb-aws">AWS</span>
+    <span class="sb sb-docker">Docker</span>
+    <span class="sb sb-k8s">Kubernetes</span>
+    <span class="sb sb-helm">Helm</span>
+    <span class="sb sb-linux">Linux</span>
+    <span class="sb sb-prom">Prometheus</span>
+  </div>
+</section>
+<div id="posts"></div>
+<section class="group">
+  <h2 class="group-title">클라우드 기초 · AWS</h2>
+  <div class="card-grid">
+  <a class="card" href="posts/week01.html">
+  <div class="card-top"><span class="weekbadge">WEEK 01</span></div>
+  <h3>클라우드란? — 개념, AWS 입문, 리눅스 가상머신</h3>
+  <p class="card-sum">온프레미스 vs 클라우드, IaaS·PaaS·SaaS, 퍼블릭/프라이빗/하이브리드, 가상화·서버리스. AWS 가입과 VMware로 우분투 설치, 리눅스 기초 명령어까지.</p>
+  <div class="tags"><span class="tag">클라우드</span><span class="tag">IaaS/PaaS/SaaS</span><span class="tag">AWS</span><span class="tag">가상화</span><span class="tag">Linux</span><span class="tag">VMware</span></div>
+</a>
+<a class="card" href="posts/week02.html">
+  <div class="card-top"><span class="weekbadge">WEEK 02</span></div>
+  <h3>AWS 컴퓨팅 — 서버 기초와 Amazon EC2</h3>
+  <p class="card-sum">서버/웹서버/DB서버 개념, 리눅스 vs 윈도우 서버, EC2 인스턴스 유형·AMI·EBS·보안 그룹·키 페어. EC2 인스턴스를 배포하고 SSH로 접속하는 실습.</p>
+  <div class="tags"><span class="tag">AWS</span><span class="tag">EC2</span><span class="tag">AMI</span><span class="tag">EBS</span><span class="tag">보안 그룹</span><span class="tag">SSH</span></div>
+</a>
+<a class="card" href="posts/week03.html">
+  <div class="card-top"><span class="weekbadge">WEEK 03</span></div>
+  <h3>네트워크 기초와 Amazon VPC</h3>
+  <p class="card-sum">OSI 7계층, IP/서브넷/CIDR, TCP·UDP·포트. AWS 네트워킹과 VPC로 퍼블릭/프라이빗 서브넷 구성, 인터넷 게이트웨이·NAT·보안 그룹·NACL.</p>
+  <div class="tags"><span class="tag">네트워크</span><span class="tag">VPC</span><span class="tag">서브넷</span><span class="tag">CIDR</span><span class="tag">보안 그룹</span><span class="tag">NACL</span></div>
+</a>
+  </div>
+</section>
+<section class="group">
+  <h2 class="group-title">Docker</h2>
+  <div class="card-grid">
+  <a class="card" href="posts/week04.html">
+  <div class="card-top"><span class="weekbadge">WEEK 04</span></div>
+  <h3>도커 개념과 이미지 빌드 — 멀티 스테이지까지</h3>
+  <p class="card-sum">컨테이너 vs VM, 도커 설치, 컨테이너 실행/웹 호스팅, Dockerfile 작성과 레이어 캐시 최적화, 멀티 스테이지 빌드로 Java·Node.js·Go 이미지 경량화.</p>
+  <div class="tags"><span class="tag">Docker</span><span class="tag">컨테이너</span><span class="tag">Dockerfile</span><span class="tag">멀티 스테이지</span><span class="tag">이미지 레이어</span></div>
+</a>
+<a class="card" href="posts/week05.html">
+  <div class="card-top"><span class="weekbadge">WEEK 05</span></div>
+  <h3>도커 레지스트리 · 볼륨 · 컴포즈</h3>
+  <p class="card-sum">Docker Hub 푸시와 사설 레지스트리, 이미지 태그 전략과 골든 이미지, 볼륨/바인드 마운트로 데이터 영속화, 도커 컴포즈로 다중 컨테이너 앱 실행.</p>
+  <div class="tags"><span class="tag">Docker</span><span class="tag">Registry</span><span class="tag">Volume</span><span class="tag">Docker Compose</span><span class="tag">골든 이미지</span></div>
+</a>
+<a class="card" href="posts/week06.html">
+  <div class="card-top"><span class="weekbadge">WEEK 06</span></div>
+  <h3>헬스 체크 · 다중 환경 컴포즈 · CI</h3>
+  <p class="card-sum">HEALTHCHECK와 디펜던시 체크로 복원력 있는 컨테이너 만들기, 오버라이드 파일로 환경별 구성, Gogs+Jenkins로 도커 기반 CI 파이프라인 구축.</p>
+  <div class="tags"><span class="tag">Docker</span><span class="tag">HEALTHCHECK</span><span class="tag">Compose Override</span><span class="tag">CI</span><span class="tag">Jenkins</span></div>
+</a>
+  </div>
+</section>
+<section class="group">
+  <h2 class="group-title">Kubernetes 입문</h2>
+  <div class="card-grid">
+  <a class="card" href="posts/week07.html">
+  <div class="card-top"><span class="weekbadge">WEEK 07</span></div>
+  <h3>쿠버네티스 기본 구조와 클러스터 구축</h3>
+  <p class="card-sum">쿠버네티스 개념(클러스터/노드/파드), kubeadm으로 마스터·워커 노드 구성과 Calico CNI, 그리고 Rancher Desktop·K3s·EKS·AKS 등 다양한 실습 환경.</p>
+  <div class="tags"><span class="tag">Kubernetes</span><span class="tag">kubeadm</span><span class="tag">CNI</span><span class="tag">K3s</span><span class="tag">EKS/AKS</span></div>
+</a>
+<a class="card" href="posts/week09.html">
+  <div class="card-top"><span class="weekbadge">WEEK 09</span></div>
+  <h3>파드 · 디플로이먼트 · 서비스(네트워크)</h3>
+  <p class="card-sum">파드와 컨트롤러 객체, 디플로이먼트로 자가치유·스케일링, 매니페스트(YAML) 선언적 배포, ClusterIP·LoadBalancer·NodePort·ExternalName 서비스로 트래픽 라우팅.</p>
+  <div class="tags"><span class="tag">Kubernetes</span><span class="tag">Pod</span><span class="tag">Deployment</span><span class="tag">Service</span><span class="tag">kubectl</span></div>
+</a>
+<a class="card" href="posts/week10.html">
+  <div class="card-top"><span class="weekbadge">WEEK 10</span></div>
+  <h3>컨피그맵 · 볼륨/퍼시스턴시 · 스케일링</h3>
+  <p class="card-sum">컨피그맵/비밀값으로 설정 주입, emptyDir·hostPath·PV/PVC로 데이터 영속화, 레플리카셋·디플로이먼트·데몬셋으로 스케일링과 고가용성 확보.</p>
+  <div class="tags"><span class="tag">Kubernetes</span><span class="tag">ConfigMap</span><span class="tag">PV/PVC</span><span class="tag">ReplicaSet</span><span class="tag">DaemonSet</span></div>
+</a>
+  </div>
+</section>
+<section class="group">
+  <h2 class="group-title">Kubernetes 심화</h2>
+  <div class="card-grid">
+  <a class="card" href="posts/week11.html">
+  <div class="card-top"><span class="weekbadge">WEEK 11</span></div>
+  <h3>멀티컨테이너 파드 · 스테이트풀셋 · 롤아웃/롤백</h3>
+  <p class="card-sum">사이드카·초기화 컨테이너 패턴, 스테이트풀셋과 헤드리스 서비스·볼륨 클레임 템플릿, 롤링 업데이트와 롤백, Recreate vs RollingUpdate 전략.</p>
+  <div class="tags"><span class="tag">Kubernetes</span><span class="tag">사이드카</span><span class="tag">StatefulSet</span><span class="tag">롤아웃</span><span class="tag">롤백</span></div>
+</a>
+<a class="card" href="posts/week12.html">
+  <div class="card-top"><span class="weekbadge">WEEK 12</span></div>
+  <h3>헬름 · 개발 워크플로(CI/CD) · 자기수복 앱</h3>
+  <p class="card-sum">헬름 차트로 패키징과 의존 관계 모델링, 도커/쿠버네티스 개발 워크플로와 컨텍스트·네임스페이스, 레디니스·리브니스 프로브로 자기수복형 애플리케이션 구성.</p>
+  <div class="tags"><span class="tag">Kubernetes</span><span class="tag">Helm</span><span class="tag">CI/CD</span><span class="tag">Probe</span><span class="tag">Namespace</span></div>
+</a>
+  </div>
+</section>
+<section class="group">
+  <h2 class="group-title">Kubernetes 운영</h2>
+  <div class="card-grid">
+  <a class="card" href="posts/week13.html">
+  <div class="card-top"><span class="weekbadge">WEEK 13</span></div>
+  <h3>중앙 로그 관리 · 모니터링 · 인그레스</h3>
+  <p class="card-sum">Fluent Bit+Elasticsearch+Kibana 로그 파이프라인, Prometheus+Grafana 모니터링과 익스포터, Ingress 컨트롤러로 호스트/경로 기반 트래픽 라우팅.</p>
+  <div class="tags"><span class="tag">Kubernetes</span><span class="tag">Fluentd</span><span class="tag">Prometheus</span><span class="tag">Grafana</span><span class="tag">Ingress</span></div>
+</a>
+<a class="card" href="posts/week14.html">
+  <div class="card-top"><span class="weekbadge">WEEK 14</span></div>
+  <h3>RBAC 보안 · 스케줄링/HPA · CRD·오퍼레이터</h3>
+  <p class="card-sum">RBAC(Role/Binding/ServiceAccount)로 권한 제어, 테인트·어피니티 스케줄링과 HPA 자동 스케일링, CRD와 커스텀 컨트롤러·오퍼레이터로 쿠버네티스 확장.</p>
+  <div class="tags"><span class="tag">Kubernetes</span><span class="tag">RBAC</span><span class="tag">스케줄링</span><span class="tag">HPA</span><span class="tag">CRD/Operator</span></div>
+</a>
+  </div>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>클라우드 프로그래밍 기말 과제 · 개인 학습 포트폴리오</p>
+    <p class="muted">AWS · Docker · Kubernetes 실습 기록</p>
+  </div>
+</footer>
+</body>
+</html>

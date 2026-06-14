@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WEEK 03 · 네트워크 기초와 Amazon VPC — Cloud Programming Lab</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="../index.html">☁ Cloud Programming Lab</a>
+    <nav class="topnav">
+      <a href="../index.html">홈</a>
+      <a href="../index.html#posts">강의별 기록</a>
+      <a href="../index.html#about">소개</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <div class="post-head">
+    <span class="weekbadge">WEEK 03</span>
+    <span class="post-group">클라우드 기초 · AWS</span>
+    <h1>네트워크 기초와 Amazon VPC</h1>
+    <div class="tags"><span class="tag">네트워크</span><span class="tag">VPC</span><span class="tag">서브넷</span><span class="tag">CIDR</span><span class="tag">보안 그룹</span><span class="tag">NACL</span></div>
+  </div>
+  <div class="post-layout">
+    <div class="post-body">
+    <p>네트워크 기초 + Amazon VPC 주차. 네트워크 도구로 경로·IP를 확인하고, VPC에 퍼블릭/프라이빗 서브넷을 구성한 뒤 통신을 확인하고 삭제하는 순서로 실습한다.</p>
+<h2 id="_1">개념 요약</h2>
+<ul>
+<li><strong>VPC (Virtual Private Cloud)</strong> — 사용자 정의 가상 프라이빗 클라우드 네트워크. 리전마다 독립적으로 구성된다.</li>
+<li><strong>서브넷</strong> — VPC 내부를 나눈 네트워크. 반드시 하나의 가용 영역에 종속된다. <strong>VPC라는 큰 CIDR에서 서브넷이라는 작은 CIDR을 분할</strong>한다.</li>
+<li><strong>IGW(인터넷 게이트웨이)</strong> — 라우팅 타깃을 IGW로 지정하면 <strong>퍼블릭 서브넷</strong>이 된다.</li>
+<li><strong>NAT 게이트웨이</strong> — <strong>프라이빗 서브넷</strong>에서 외부로 나갈 때 쓰는 관문. 외부에서 프라이빗 IP로 들어오는 통신은 불가능하다.</li>
+<li>보안 그룹(스테이트풀, 자원 단위) vs 네트워크 ACL(스테이트리스, 서브넷 단위).</li>
+</ul>
+<h2 id="1">실습 ① 네트워크 도구로 확인하기</h2>
+<ol>
+<li><strong>Cisco Packet Tracer</strong> 로 NAT 네트워크 구성, 퍼블릭/프라이빗 IP·서브넷 마스크 적용</li>
+<li><strong>Wireshark</strong> 로 패킷 캡처·분석</li>
+<li>리눅스 <strong>traceroute</strong> 로 목적지까지 거치는 경로(홉) 확인</li>
+<li><strong>KISA 후이즈</strong>(whois.kisa.or.kr)에서 IP 정보 조회</li>
+</ol>
+<div class="highlight"><pre><span></span><code>traceroute<span class="w"> </span>&lt;대상&gt;<span class="w">        </span><span class="c1"># 목적지까지의 네트워크 경로(홉) 확인</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">traceroute 출력 / whois 조회 결과</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="2-vpc">실습 ② VPC로 퍼블릭/프라이빗 서브넷 구성하기</h2>
+<h3 id="1-vpc">단계 ① VPC 생성</h3>
+<ol>
+<li>VPC 콘솔 → <strong>[VPC 생성]</strong></li>
+<li>이름과 <strong>IP CIDR</strong>(예: <code>10.0.0.0/16</code>) 지정</li>
+</ol>
+<div class="admonition capture">
+<p class="admonition-title">VPC 생성 화면</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h3 id="2">단계 ② 퍼블릭 서브넷 생성</h3>
+<ol>
+<li>VPC의 CIDR에서 분할한 <strong>서브넷</strong>(예: <code>10.0.1.0/24</code>)을 특정 가용 영역에 생성</li>
+<li><strong>인터넷 게이트웨이(IGW)</strong> 생성 후 VPC에 연결</li>
+<li>서브넷 <strong>라우팅 테이블</strong>에 <code>0.0.0.0/0 → IGW</code> 경로 추가</li>
+</ol>
+<div class="admonition capture">
+<p class="admonition-title">서브넷·라우팅 테이블 / IGW 연결</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h3 id="3">단계 ③ 퍼블릭 서브넷 통신 확인</h3>
+<p>퍼블릭 서브넷에 인스턴스를 두고 퍼블릭 IP를 할당한 뒤, 외부 인터넷과 통신되는지 확인한다.</p>
+<div class="admonition capture">
+<p class="admonition-title">퍼블릭 서브넷 통신 확인</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h3 id="4">단계 ④ 프라이빗 서브넷 생성</h3>
+<ol>
+<li>다른 CIDR(예: <code>10.0.2.0/24</code>)로 <strong>프라이빗 서브넷</strong> 생성</li>
+<li>외부로 나가는 통신이 필요하면 <strong>NAT 게이트웨이</strong>를 두고 라우팅 타깃으로 지정</li>
+</ol>
+<h3 id="5">단계 ⑤ 프라이빗 서브넷 통신 확인</h3>
+<p>프라이빗 서브넷의 인스턴스가 NAT 게이트웨이를 거쳐 외부로 나가는지, 외부에서는 직접 접근되지 않는지 확인한다.</p>
+<div class="admonition capture">
+<p class="admonition-title">프라이빗 서브넷 통신 확인</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h3 id="6">단계 ⑥ 자원 전체 삭제</h3>
+<p>NAT 게이트웨이·IGW·서브넷·VPC 등 생성한 자원을 모두 삭제한다.</p>
+<div class="admonition warning">
+<p class="admonition-title">NAT 게이트웨이는 과금된다</p>
+<p>NAT 게이트웨이는 실행 중 시간당 요금과 데이터 처리 요금이 발생한다. 실습 후 NAT 게이트웨이부터 삭제한다.</p>
+</div>
+<h2 id="_2">막혔던 점</h2>
+<ul>
+<li>VPC 피어링 연결 실패 → 두 VPC의 IP CIDR이 중복되면 불가. 비중복으로 재설계 후 피어링.</li>
+<li>퍼블릭 서브넷인데 인터넷이 안 됨 → 라우팅 테이블에 <code>0.0.0.0/0 → IGW</code> 추가 + 퍼블릭 IP 할당.</li>
+<li>프라이빗 서브넷에서 외부로 못 나감 → NAT 게이트웨이 생성 후 라우팅 타깃으로 지정.</li>
+<li>보안 그룹을 열었는데 트래픽 차단 → NACL은 스테이트리스이므로 회신용 임시 포트(동적 포트 범위)를 인바운드·아웃바운드 양방향 허용.</li>
+<li>ping이 안 됨 → ping은 ICMP를 쓰므로 보안 규칙에 ICMP 허용 추가.</li>
+</ul>
+    </div>
+    <aside class="toc"><div class="toc-title">목차</div><div class="toc">
+<ul>
+<li><a href="#_1">개념 요약</a></li>
+<li><a href="#1">실습 ① 네트워크 도구로 확인하기</a></li>
+<li><a href="#2-vpc">실습 ② VPC로 퍼블릭/프라이빗 서브넷 구성하기</a><ul>
+<li><a href="#1-vpc">단계 ① VPC 생성</a></li>
+<li><a href="#2">단계 ② 퍼블릭 서브넷 생성</a></li>
+<li><a href="#3">단계 ③ 퍼블릭 서브넷 통신 확인</a></li>
+<li><a href="#4">단계 ④ 프라이빗 서브넷 생성</a></li>
+<li><a href="#5">단계 ⑤ 프라이빗 서브넷 통신 확인</a></li>
+<li><a href="#6">단계 ⑥ 자원 전체 삭제</a></li>
+</ul>
+</li>
+<li><a href="#_2">막혔던 점</a></li>
+</ul>
+</div>
+</aside>
+  </div>
+  <nav class="postnav">
+    <a class="pn prev" href="week02.html">← WEEK 02<span>AWS 컴퓨팅 — 서버 기초와 Amazon EC2</span></a>
+    <a class="pn next" href="week04.html">WEEK 04 →<span>도커 개념과 이미지 빌드 — 멀티 스테이지까지</span></a>
+  </nav>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>클라우드 프로그래밍 기말 과제 · 개인 학습 포트폴리오</p>
+    <p class="muted">AWS · Docker · Kubernetes 실습 기록</p>
+  </div>
+</footer>
+</body>
+</html>

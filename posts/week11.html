@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WEEK 11 · 멀티컨테이너 파드 · 스테이트풀셋 · 롤아웃/롤백 — Cloud Programming Lab</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="../index.html">☁ Cloud Programming Lab</a>
+    <nav class="topnav">
+      <a href="../index.html">홈</a>
+      <a href="../index.html#posts">강의별 기록</a>
+      <a href="../index.html#about">소개</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <div class="post-head">
+    <span class="weekbadge">WEEK 11</span>
+    <span class="post-group">Kubernetes 심화</span>
+    <h1>멀티컨테이너 파드 · 스테이트풀셋 · 롤아웃/롤백</h1>
+    <div class="tags"><span class="tag">Kubernetes</span><span class="tag">사이드카</span><span class="tag">StatefulSet</span><span class="tag">롤아웃</span><span class="tag">롤백</span></div>
+  </div>
+  <div class="post-layout">
+    <div class="post-body">
+    <p>멀티컨테이너 파드 → 초기화 컨테이너·사이드카 → 스테이트풀셋 → 롤아웃/롤백 순서로 실습했다.</p>
+<h2 id="_1">멀티컨테이너 파드 — 볼륨 공유</h2>
+<p>같은 파드의 컨테이너는 같은 IP를 가지며 <code>localhost</code>로 통신하고 볼륨을 공유한다. <code>sleep</code>은 쓰기(<code>/data-rw</code>), <code>file-reader</code>는 읽기 전용(<code>/data-ro</code>)으로 같은 <code>emptyDir</code>를 마운트한 정의:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">containers</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sleep</span>
+<span class="w">      </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kiamol/ch03-sleep</span>
+<span class="w">      </span><span class="nt">volumeMounts</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data</span>
+<span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/data-rw</span><span class="w">          </span><span class="c1"># 볼륨을 쓰기 가능으로 마운트</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">file-reader</span><span class="w">                 </span><span class="c1"># 컨테이너는 각기 다른 이름을 갖는다</span>
+<span class="w">      </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kiamol/ch03-sleep</span><span class="w">         </span><span class="c1"># 하지만 이미지는 같을 수도 있다</span>
+<span class="w">      </span><span class="nt">volumeMounts</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data</span>
+<span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/data-ro</span>
+<span class="w">          </span><span class="nt">readOnly</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">               </span><span class="c1"># 같은 볼륨을 읽기 전용으로 마운트</span>
+<span class="w">  </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data</span><span class="w">                       </span><span class="c1"># 같은 볼륨을 여러 컨테이너에 마운트</span>
+<span class="w">      </span><span class="nt">emptyDir</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch07
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/sleep-with-file-reader.yaml<span class="w">   </span><span class="c1"># 두 컨테이너 파드 배치</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>sleep<span class="w"> </span>-o<span class="w"> </span>wide<span class="w">                 </span><span class="c1"># 파드 상세</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>sleep<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.items[0].status.containerStatuses[*].name}&#39;</span><span class="w">  </span><span class="c1"># 컨테이너 이름</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>-c<span class="w"> </span>sleep<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;echo ${HOSTNAME} &gt; /data-rw/hostname.txt&#39;</span><span class="w">  </span><span class="c1"># 한쪽에서 기록</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>-c<span class="w"> </span>file-reader<span class="w"> </span>--<span class="w"> </span>cat<span class="w"> </span>/data-ro/hostname.txt<span class="w">                   </span><span class="c1"># 다른 쪽에서 읽기</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>-c<span class="w"> </span>file-reader<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;echo more &gt;&gt; /data-ro/hostname.txt&#39;</span><span class="w">  </span><span class="c1"># 읽기 전용 → 오류(정상)</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">멀티컨테이너 파일 공유 결과</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<p>두 번째 컨테이너를 HTTP 서버로 바꾸면 <code>sleep</code>에서 <code>localhost:8080</code>으로 접근 가능. 외부 노출은 서비스로 처리:</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/sleep-with-server.yaml<span class="w">                       </span><span class="c1"># 서버 컨테이너 포함 파드</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>-c<span class="w"> </span>sleep<span class="w"> </span>--<span class="w"> </span>wget<span class="w"> </span>-q<span class="w"> </span>-O<span class="w"> </span>-<span class="w"> </span>localhost:8080<span class="w">   </span><span class="c1"># localhost로 서버 호출</span>
+kubectl<span class="w"> </span>expose<span class="w"> </span>-f<span class="w"> </span>sleep/sleep-with-server.yaml<span class="w"> </span>--type<span class="w"> </span>LoadBalancer<span class="w"> </span>--port<span class="w"> </span><span class="m">8020</span><span class="w"> </span>--target-port<span class="w"> </span><span class="m">8080</span><span class="w">  </span><span class="c1"># 서비스 생성</span>
+kubectl<span class="w"> </span>logs<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>sleep<span class="w"> </span>-c<span class="w"> </span>server<span class="w">                                 </span><span class="c1"># 서버 로그</span>
+</code></pre></div>
+
+<h2 id="_2">초기화 컨테이너와 사이드카</h2>
+<p>일반 컨테이너는 병렬 실행되고 모두 Ready여야 파드가 준비된다. 초기화 컨테이너는 애플리케이션보다 먼저, 정의 순서대로 실행돼 공유 볼륨에 데이터를 준비한다.</p>
+<p><code>timecheck</code>에 초기화 컨테이너를 붙여 <code>jq</code>로 <code>appsettings.json</code>을 가공한다:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">initContainers</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">init-config</span>
+<span class="w">      </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kiamol/ch03-sleep</span><span class="w">          </span><span class="c1"># 이 이미지에는 jq 명령이 들어 있다</span>
+<span class="w">      </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;sh&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;-c&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;cat</span><span class="nv"> </span><span class="s">/config-in/appsettings.json</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">jq</span><span class="nv"> </span><span class="s">--arg</span><span class="nv"> </span><span class="s">APP_ENV</span><span class="nv"> </span><span class="s">\&quot;$APP_ENVIRONMENT\&quot;</span><span class="nv"> </span><span class="s">&#39;.Application.Environment=$APP_ENV&#39;</span><span class="nv"> </span><span class="s">&gt;</span><span class="nv"> </span><span class="s">/config-out/appsettings.json&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">env</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">APP_ENVIRONMENT</span><span class="w">          </span><span class="c1"># 모든 컨테이너는 각자의 환경 변수를 갖는다</span>
+<span class="w">          </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TEST</span><span class="w">                    </span><span class="c1"># 이 환경 변수는 파드 안에서 공유되지 않는다</span>
+<span class="w">      </span><span class="nt">volumeMounts</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">config-map</span><span class="w">               </span><span class="c1"># 컨피그맵을 읽어 들이는 볼륨</span>
+<span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/config-in</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">config-dir</span>
+<span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/config-out</span><span class="w">         </span><span class="c1"># 가공된 설정 파일을 기록할 공디렉터리</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>timecheck/timecheck-configMap.yaml<span class="w"> </span>-f<span class="w"> </span>timecheck/timecheck-with-config.yaml<span class="w">  </span><span class="c1"># 컨피그맵+디플로이먼트</span>
+kubectl<span class="w"> </span><span class="nb">wait</span><span class="w"> </span>--for<span class="o">=</span><span class="nv">condition</span><span class="o">=</span>ContainersReady<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>timecheck,version<span class="o">=</span>v2<span class="w">                 </span><span class="c1"># 준비 대기</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/timecheck<span class="w"> </span>--<span class="w"> </span>cat<span class="w"> </span>/config/appsettings.json<span class="w">                                </span><span class="c1"># 가공된 설정 확인</span>
+</code></pre></div>
+
+<p>사이드카로 로그 수집기, 헬스체크 API(:8080), 메트릭 API(:8081)를 붙여 표준 관리 API를 제공한다. 헬스체크 사이드카는 <code>nc</code>로 고정 응답을 반환:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">healthz</span><span class="w">                  </span><span class="c1"># 헬스체크 API를 제공하는 사이드카</span>
+<span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kiamol/ch03-sleep</span>
+<span class="w">  </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;sh&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;-c&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;while</span><span class="nv"> </span><span class="s">true;</span><span class="nv"> </span><span class="s">do</span><span class="nv"> </span><span class="s">echo</span><span class="nv"> </span><span class="s">-e</span><span class="nv"> </span><span class="s">&#39;HTTP/1.1</span><span class="nv"> </span><span class="s">200</span><span class="nv"> </span><span class="s">OK\nContent-Type:</span><span class="nv"> </span><span class="s">application/json\nContent-Length:</span><span class="nv"> </span><span class="s">17\n\n{\&quot;status\&quot;:</span><span class="nv"> </span><span class="s">\&quot;OK\&quot;}&#39;</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">nc</span><span class="nv"> </span><span class="s">-l</span><span class="nv"> </span><span class="s">-p</span><span class="nv"> </span><span class="s">8080;</span><span class="nv"> </span><span class="s">done&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w">        </span><span class="c1"># 파드의 8080번 포트를 사용한다</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>timecheck/timecheck-with-logging.yaml<span class="w">                  </span><span class="c1"># 사이드카 추가 배치</span>
+kubectl<span class="w"> </span>logs<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>timecheck<span class="w"> </span>-c<span class="w"> </span>logger<span class="w">                                </span><span class="c1"># 로깅 사이드카 로그</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>-c<span class="w"> </span>sleep<span class="w"> </span>--<span class="w"> </span>wget<span class="w"> </span>-q<span class="w"> </span>-O<span class="w"> </span>-<span class="w"> </span>http://timecheck:8080<span class="w">  </span><span class="c1"># 헬스체크 API</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>-c<span class="w"> </span>sleep<span class="w"> </span>--<span class="w"> </span>wget<span class="w"> </span>-q<span class="w"> </span>-O<span class="w"> </span>-<span class="w"> </span>http://timecheck:8081<span class="w">  </span><span class="c1"># 메트릭 API</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">헬스/메트릭 사이드카 응답</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_3">스테이트풀셋</h2>
+<p>스테이트풀셋은 <code>todo-db-0</code>, <code>todo-db-1</code>처럼 규칙적 이름을 0번부터 순서대로 부여한다. 데이터베이스 같은 클러스터형 상태 애플리케이션 모델링에 쓴다.</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch08
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>todo-list/db/<span class="w">          </span><span class="c1"># 스테이트풀셋·서비스·비밀값 배치</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>statefulset<span class="w"> </span>todo-db<span class="w">         </span><span class="c1"># 스테이트풀셋 확인</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>todo-db<span class="w">         </span><span class="c1"># 규칙적 파드 이름 확인</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">get statefulset / 규칙적 파드 이름</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<p>파드가 삭제되면 같은 이름의 대체 파드를 만들되 uid는 새로 부여한다:</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>todo-db-0<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.metadata.uid}&#39;</span><span class="w">  </span><span class="c1"># 삭제 전 uid</span>
+kubectl<span class="w"> </span>delete<span class="w"> </span>pod<span class="w"> </span>todo-db-0<span class="w">                              </span><span class="c1"># 수동 삭제</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>todo-db-0<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.metadata.uid}&#39;</span><span class="w">  </span><span class="c1"># 대체 파드 uid(변경됨)</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">파드 삭제 후 uid 변경</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<p>파드별 고유 DNS가 필요하면 <code>clusterIP: None</code>인 헤드리스 서비스를 쓴다. IP 대신 <code>todo-db-0.todo-db.default.svc.cluster.local</code> 도메인을 노출한다:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Service</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">todo-db</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">selector</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">todo-db</span>
+<span class="w">  </span><span class="nt">clusterIP</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">None</span><span class="w">     </span><span class="c1"># 이 서비스에는 IP 주소가 부여되지 않는다 (헤드리스)</span>
+<span class="w">  </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># 이 뒤로 포트 설정</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </span>todo-db<span class="w">                 </span><span class="c1"># CLUSTER-IP가 None</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;nslookup todo-db-0.todo-db.default.svc.cluster.local&#39;</span><span class="w">  </span><span class="c1"># 파드 도메인 조회</span>
+kubectl<span class="w"> </span>scale<span class="w"> </span>--replicas<span class="o">=</span><span class="m">3</span><span class="w"> </span>statefulset/todo-db<span class="w">  </span><span class="c1"># 레플리카 추가</span>
+</code></pre></div>
+
+<p>파드마다 별도 스토리지를 주려면 <code>volumeClaimTemplates</code>를 쓴다. 파드별 PVC가 동적 생성되고, 파드가 대체돼도 기존 PVC가 다시 연결된다:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">volumeClaimTemplates</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">metadata</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data</span><span class="w">               </span><span class="c1"># 파드 볼륨 마운트의 이름</span>
+<span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">                      </span><span class="c1"># 일반적인 영구볼륨클레임의 정의</span>
+<span class="w">      </span><span class="nt">accessModes</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ReadWriteOnce</span>
+<span class="w">      </span><span class="nt">resources</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">requests</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">storage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5Mi</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/sleep-with-pvc.yaml<span class="w">                       </span><span class="c1"># 볼륨 클레임 템플릿 스테이트풀셋</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pvc<span class="w">                                                  </span><span class="c1"># 파드별 PVC 확인</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>sleep-with-pvc-0<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;echo Pod 0 &gt; /data/pod.txt&#39;</span><span class="w">  </span><span class="c1"># 파드 0에 기록</span>
+kubectl<span class="w"> </span>delete<span class="w"> </span>pod<span class="w"> </span>sleep-with-pvc-0<span class="w">                              </span><span class="c1"># 수동 삭제</span>
+kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>sleep-with-pvc-0<span class="w"> </span>--<span class="w"> </span>cat<span class="w"> </span>/data/pod.txt<span class="w">              </span><span class="c1"># 대체 파드가 데이터 유지</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">get pvc — 파드별 PVC와 데이터 유지</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_4">롤아웃과 롤백</h2>
+<p>디플로이먼트는 기존 레플리카셋을 줄이고 새 레플리카셋을 늘려 무중단 업데이트한다. 파드 정의가 바뀔 때만 롤아웃이 적용된다(스케일 변경은 제외).</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch09
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>vweb/<span class="w">                                  </span><span class="c1"># 웹 애플리케이션 배치</span>
+kubectl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>image<span class="w"> </span>deployment/vweb<span class="w"> </span><span class="nv">web</span><span class="o">=</span>kiamol/ch09-vweb:v2<span class="w">  </span><span class="c1"># 이미지 변경 → 롤아웃</span>
+kubectl<span class="w"> </span>rollout<span class="w"> </span><span class="nb">history</span><span class="w"> </span>deploy/vweb<span class="w">                     </span><span class="c1"># 롤아웃 히스토리</span>
+</code></pre></div>
+
+<p><code>--record</code>로 리비전을 추적하고, <code>kubectl rollout undo</code>로 롤백한다. <code>--dry-run</code>으로 미리 보고 <code>--to-revision</code>으로 특정 리비전을 지정한다:</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>vweb/update/vweb-v11.yaml<span class="w"> </span>--record<span class="w">   </span><span class="c1"># record 옵션으로 변경</span>
+kubectl<span class="w"> </span>rollout<span class="w"> </span><span class="nb">history</span><span class="w"> </span>deploy/vweb<span class="w">                    </span><span class="c1"># 히스토리 확인</span>
+kubectl<span class="w"> </span>rollout<span class="w"> </span>undo<span class="w"> </span>deploy/vweb<span class="w"> </span>--dry-run<span class="w">            </span><span class="c1"># 롤백 예측(미적용)</span>
+kubectl<span class="w"> </span>rollout<span class="w"> </span>undo<span class="w"> </span>deploy/vweb<span class="w"> </span>--to-revision<span class="o">=</span><span class="m">2</span><span class="w">      </span><span class="c1"># 리비전 2로 롤백</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">rollout history</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="rollingupdate-vs-recreate">업데이트 전략 — RollingUpdate vs Recreate</h2>
+<p>기본값 RollingUpdate는 파드를 점진 교체해 무중단을 유지한다. Recreate는 기존 파드를 0까지 줄인 뒤 새 파드를 올려 다운타임이 생긴다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">  </span><span class="nt">strategy</span><span class="p">:</span><span class="w">                      </span><span class="c1"># 업데이트 전략</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Recreate</span><span class="w">               </span><span class="c1"># 기본값(RollingUpdate) 대신 Recreate 사용</span>
+</code></pre></div>
+
+<p>잘못된 이미지(v3)로 업데이트하면 Recreate는 앱 전체가 중단되고, RollingUpdate는 새 파드가 준비되지 않으면 기존 파드를 유지해 앱이 살아 있다.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Recreate 전략 + 잘못된 이미지 → 앱 전체 중단</span>
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>vweb-strategies/vweb-recreate-v3.yaml
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>vweb
+curl<span class="w"> </span><span class="k">$(</span>cat<span class="w"> </span>url.txt<span class="k">)</span><span class="w"> </span>-UseBasicParsing<span class="w">                 </span><span class="c1"># 실패</span>
+
+<span class="c1"># RollingUpdate 전략 + 잘못된 이미지 → 일부만 영향, 앱은 유지</span>
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>vweb-strategies/vweb-rollingUpdate-v3.yaml
+kubectl<span class="w"> </span>get<span class="w"> </span>rs<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>vweb
+curl<span class="w"> </span><span class="k">$(</span>cat<span class="w"> </span>url.txt<span class="k">)</span><span class="w"> </span>-UseBasicParsing<span class="w">                 </span><span class="c1"># 여전히 응답</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">Recreate 중단 vs RollingUpdate 유지</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_5">막혔던 점</h2>
+<ul>
+<li>멀티컨테이너 파드에서 <code>kubectl logs</code>/<code>exec</code> 오류 → <code>-c</code>로 컨테이너 지정.</li>
+<li>읽기 전용 볼륨 쓰기 실패 → 정상 동작. 쓰기는 쓰기 가능 마운트 컨테이너에서.</li>
+<li>스테이트풀셋 파드가 천천히 생성 → 순서대로 만드는 정상 동작. <code>kubectl wait --for=condition=Ready</code>로 대기.</li>
+<li>헤드리스 서비스 CLUSTER-IP가 <code>None</code> → 정상. 파드 도메인으로 접근.</li>
+<li>스케일만 바꿔 롤백 불가 → 파드 정의 변경(이미지 교체 등)이 있어야 리비전이 쌓임.</li>
+</ul>
+    </div>
+    <aside class="toc"><div class="toc-title">목차</div><div class="toc">
+<ul>
+<li><a href="#_1">멀티컨테이너 파드 — 볼륨 공유</a></li>
+<li><a href="#_2">초기화 컨테이너와 사이드카</a></li>
+<li><a href="#_3">스테이트풀셋</a></li>
+<li><a href="#_4">롤아웃과 롤백</a></li>
+<li><a href="#rollingupdate-vs-recreate">업데이트 전략 — RollingUpdate vs Recreate</a></li>
+<li><a href="#_5">막혔던 점</a></li>
+</ul>
+</div>
+</aside>
+  </div>
+  <nav class="postnav">
+    <a class="pn prev" href="week10.html">← WEEK 10<span>컨피그맵 · 볼륨/퍼시스턴시 · 스케일링</span></a>
+    <a class="pn next" href="week12.html">WEEK 12 →<span>헬름 · 개발 워크플로(CI/CD) · 자기수복 앱</span></a>
+  </nav>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>클라우드 프로그래밍 기말 과제 · 개인 학습 포트폴리오</p>
+    <p class="muted">AWS · Docker · Kubernetes 실습 기록</p>
+  </div>
+</footer>
+</body>
+</html>

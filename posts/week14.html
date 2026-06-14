@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WEEK 14 · RBAC 보안 · 스케줄링/HPA · CRD·오퍼레이터 — Cloud Programming Lab</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="../index.html">☁ Cloud Programming Lab</a>
+    <nav class="topnav">
+      <a href="../index.html">홈</a>
+      <a href="../index.html#posts">강의별 기록</a>
+      <a href="../index.html#about">소개</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <div class="post-head">
+    <span class="weekbadge">WEEK 14</span>
+    <span class="post-group">Kubernetes 운영</span>
+    <h1>RBAC 보안 · 스케줄링/HPA · CRD·오퍼레이터</h1>
+    <div class="tags"><span class="tag">Kubernetes</span><span class="tag">RBAC</span><span class="tag">스케줄링</span><span class="tag">HPA</span><span class="tag">CRD/Operator</span></div>
+  </div>
+  <div class="post-layout">
+    <div class="post-body">
+    <p>운영 클러스터 주차. RBAC로 권한을 제약하고(Role/Binding·인증서·토큰), 스케줄링(테인트·어피니티)과 HPA로 배치·스케일링을 제어하며, CRD·오퍼레이터로 플랫폼을 확장하는 순서로 실습했다.</p>
+<h2 id="rbac">RBAC</h2>
+<p>권한 묶음(Role/ClusterRole)을 주체(RoleBinding/ClusterRoleBinding)에 연결해 <code>kubectl</code> 사용자와 서비스 계정의 권한을 제약한다. Role은 네임스페이스 범위, ClusterRole은 클러스터 전역이다.</p>
+<div class="highlight"><pre><span></span><code>.<span class="w"> </span>.<span class="se">\g</span>rep.ps1<span class="w">                                       </span><span class="c1"># 파워셸 grep 추가</span>
+kubectl<span class="w"> </span>api-versions<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>rbac<span class="w">                   </span><span class="c1"># RBAC API 확인</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>clusterroles<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>admin
+kubectl<span class="w"> </span>describe<span class="w"> </span>clusterrole<span class="w"> </span>cluster-admin<span class="w">         </span><span class="c1"># 사실상 전권 정의 확인</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">describe clusterrole cluster-admin 결과</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h3 id="_1">사용자 인증서와 컨텍스트</h3>
+<p>클라이언트 인증서로 신원을 만들어 자격 증명·컨텍스트로 등록한다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>cp<span class="w"> </span>user-cert-generator:/certs/user.key<span class="w"> </span>user.key
+kubectl<span class="w"> </span>cp<span class="w"> </span>user-cert-generator:/certs/user.crt<span class="w"> </span>user.crt
+
+kubectl<span class="w"> </span>config<span class="w"> </span>set-credentials<span class="w"> </span>reader<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--client-key<span class="o">=</span>./user.key<span class="w"> </span>--client-certificate<span class="o">=</span>./user.crt<span class="w"> </span>--embed-certs<span class="o">=</span><span class="nb">true</span><span class="w">   </span><span class="c1"># 자격 증명 등록</span>
+
+kubectl<span class="w"> </span>config<span class="w"> </span>set-context<span class="w"> </span>reader<span class="w"> </span>--user<span class="o">=</span>reader<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cluster<span class="w"> </span><span class="k">$(</span>kubectl<span class="w"> </span>config<span class="w"> </span>view<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.clusters[0].name}&#39;</span><span class="k">)</span><span class="w">           </span><span class="c1"># 컨텍스트 생성</span>
+
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>--as<span class="w"> </span>reader@kiamol.net<span class="w">            </span><span class="c1"># 롤바인딩 전에는 거부됨</span>
+</code></pre></div>
+
+<h3 id="_2">롤바인딩</h3>
+<p><code>view</code> 클러스터롤을 RoleBinding으로 default 네임스페이스에서만 <code>reader</code>에게 연결한다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rbac.authorization.k8s.io/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RoleBinding</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reader-view</span>
+<span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">default</span><span class="w">                   </span><span class="c1"># 적용 범위</span>
+<span class="nt">subjects</span><span class="p">:</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">User</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reader@kiamol.net</span><span class="w">              </span><span class="c1"># 주체</span>
+<span class="w">  </span><span class="nt">apiGroup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rbac.authorization.k8s.io</span>
+<span class="nt">roleRef</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ClusterRole</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">view</span><span class="w">                           </span><span class="c1"># 부여할 권한 묶음</span>
+<span class="w">  </span><span class="nt">apiGroup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rbac.authorization.k8s.io</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>role-bindings/reader-view-default.yaml
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>--as<span class="w"> </span>reader@kiamol.net<span class="w">                    </span><span class="c1"># default 조회 허용</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-n<span class="w"> </span>kube-system<span class="w"> </span>--as<span class="w"> </span>reader@kiamol.net<span class="w">     </span><span class="c1"># kube-system 거부</span>
+kubectl<span class="w"> </span>delete<span class="w"> </span>-f<span class="w"> </span>sleep/<span class="w"> </span>--as<span class="w"> </span>reader@kiamol.net<span class="w">            </span><span class="c1"># 삭제 거부</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">--as 신원 권한 거부/허용 비교</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h3 id="_3">서비스 계정·토큰</h3>
+<p>서비스 계정은 권한을 따로 주기 전엔 권한이 없다. 권한 확인은 <code>kubectl auth can-i</code>로 한다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>auth<span class="w"> </span>can-i<span class="w"> </span><span class="s2">&quot;*&quot;</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
+kubectl<span class="w"> </span>auth<span class="w"> </span>can-i<span class="w"> </span><span class="s2">&quot;*&quot;</span><span class="w"> </span><span class="s2">&quot;*&quot;</span><span class="w"> </span>--as<span class="w"> </span>system:serviceaccount:kiamol-ch17:default
+</code></pre></div>
+
+<p>토큰만 삭제하면 서비스 계정은 두고도 권한을 회수한다.</p>
+<div class="highlight"><pre><span></span><code>openssl<span class="w"> </span>x509<span class="w"> </span>-text<span class="w"> </span>-noout<span class="w"> </span>-in<span class="w"> </span>/certs/user.crt<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>Subject:<span class="w">   </span><span class="c1"># 인증서 Subject(그룹) 확인</span>
+
+.<span class="w"> </span>.<span class="se">\b</span>ase64.ps1<span class="w">                                                   </span><span class="c1"># 윈도우 base64 추가</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>secret<span class="w"> </span>sre2-sa-token<span class="w"> </span>-n<span class="w"> </span>kiamol-authn-sre<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.data.token}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="w"> </span>-d<span class="w"> </span>&gt;<span class="w"> </span>sa-token
+kubectl<span class="w"> </span>config<span class="w"> </span>set-credentials<span class="w"> </span>ch17-sre<span class="w"> </span>--token<span class="o">=</span><span class="k">$(</span>cat<span class="w"> </span>sa-token<span class="k">)</span>
+
+kubectl<span class="w"> </span>delete<span class="w"> </span>secret<span class="w"> </span>sre2-sa-token<span class="w"> </span>-n<span class="w"> </span>kiamol-authn-sre<span class="w">         </span><span class="c1"># 토큰 삭제로 권한 회수</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">auth can-i 결과</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="hpa">스케줄링과 HPA</h2>
+<p>스케줄러가 노드 자원·점유량·배치 정책을 종합해 파드 배치를 결정한다.</p>
+<p>테인트(<code>NoSchedule</code>)를 건 노드는 일치하는 톨러레이션이 있는 파드만 배정한다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>taint<span class="w"> </span>nodes<span class="w"> </span>--all<span class="w"> </span>kiamol-disk<span class="o">=</span>hdd:NoSchedule<span class="w">       </span><span class="c1"># 테인트 추가 → 톨러레이션 없으면 Pending</span>
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/sleep2.yaml
+kubectl<span class="w"> </span>get<span class="w"> </span>po<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>sleep2
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/update/sleep2-with-tolerations.yaml<span class="w"> </span><span class="c1"># 톨러레이션 추가 → 배정</span>
+kubectl<span class="w"> </span>taint<span class="w"> </span>nodes<span class="w"> </span>--all<span class="w"> </span>kiamol-disk<span class="o">=</span>hdd:NoSchedule-<span class="w">      </span><span class="c1"># 테인트 제거</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="nt">tolerations</span><span class="p">:</span><span class="w">                </span><span class="c1"># 용납 가능한 테인트</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;kiamol-disk&quot;</span>
+<span class="w">    </span><span class="nt">operator</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Equal&quot;</span><span class="w">       </span><span class="c1"># 키·값·이펙트 모두 일치해야 함</span>
+<span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hdd&quot;</span>
+<span class="w">    </span><span class="nt">effect</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;NoSchedule&quot;</span>
+</code></pre></div>
+
+<h3 id="_4">어피니티</h3>
+<p>노드 어피니티는 노드 레이블 대상 표현식을 쓴다. 같은 <code>matchExpressions</code> 안은 AND, 여러 <code>matchExpressions</code>는 OR다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">affinity</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">nodeAffinity</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">requiredDuringSchedulingIgnoredDuringExecution</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">nodeSelectorTerms</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">matchExpressions</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kubernetes.io/arch</span><span class="w">    </span><span class="c1"># 레이블 대상</span>
+<span class="w">          </span><span class="nt">operator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">In</span>
+<span class="w">          </span><span class="nt">values</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">amd64</span><span class="w">                    </span><span class="c1"># amd64 노드에서만 실행</span>
+</code></pre></div>
+
+<p>파드 어피니티/안티어피니티는 <code>topologyKey</code> 기준으로 다른 파드와 같은/다른 노드 배치를 지시한다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/update/sleep2-with-nodeAffinity-required.yaml
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>numbers<span class="w"> </span>-o<span class="w"> </span>wide<span class="w">   </span><span class="c1"># 같은 노드 배정 확인</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">taint 후 Pending 상태</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h3 id="hpa_1">HPA</h3>
+<p>HPA는 부하에 맞춰 레플리카를 자동 조절한다. 부하 측정에는 metrics-server가 필요하다. v1은 CPU 한 지표만, v2는 다중 지표·스케일다운 제어를 지원한다.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># HPA v1</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">scaleTargetRef</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apps/v1</span>
+<span class="w">    </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Deployment</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pi-web-lab</span>
+<span class="w">  </span><span class="nt">minReplicas</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">maxReplicas</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">  </span><span class="nt">targetCPUUtilizationPercentage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">75</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="c1"># HPA v2 — 스케일다운 동작 정의</span>
+<span class="nt">metrics</span><span class="p">:</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Resource</span>
+<span class="w">  </span><span class="nt">resource</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cpu</span>
+<span class="w">    </span><span class="nt">target</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Utilization</span>
+<span class="w">      </span><span class="nt">averageUtilization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">75</span>
+<span class="nt">behavior</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">scaleDown</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">stabilizationWindowSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span><span class="w">   </span><span class="c1"># 기준 아래로 내려간 뒤 30초 대기</span>
+<span class="w">    </span><span class="nt">policies</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Percent</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50</span><span class="w">                      </span><span class="c1"># 현재 파드 수의 50%씩 감소</span>
+<span class="w">      </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">15</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>pi/<span class="w">                          </span><span class="c1"># HPA 포함 앱 배치</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>hpa<span class="w"> </span>pi-cpu
+
+.<span class="se">\l</span>oadpi.ps1<span class="w">                                  </span><span class="c1"># 부하 (윈도우)</span>
+<span class="c1"># chmod +x ./loadpi.sh &amp;&amp; ./loadpi.sh         # (리눅스/macOS)</span>
+
+kubectl<span class="w"> </span>get<span class="w"> </span>hpa<span class="w"> </span>pi-cpu<span class="w">                        </span><span class="c1"># 스케일업 확인</span>
+kubectl<span class="w"> </span>top<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>pi-web<span class="w">                </span><span class="c1"># 파드별 CPU 확인</span>
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>pi/update/hpa-cpu-v2.yaml<span class="w">    </span><span class="c1"># v2로 변경</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">get hpa 스케일업·kubectl top pods</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="crd">CRD와 오퍼레이터</h2>
+<p>REST API 패턴을 그대로 확장해 사용자 정의 리소스 타입을 만든다. CRD로 타입을 정의하고, 커스텀 컨트롤러가 변화를 주시해 워크플로를 실행하며, 오퍼레이터는 CRD+컨트롤러로 복잡한 앱의 생애 주기를 관리한다.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apiextensions.k8s.io/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CustomResourceDefinition</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">todos.ch20.kiamol.net</span><span class="w">    </span><span class="c1"># &lt;복수형&gt;.&lt;group&gt; 형식</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ch20.kiamol.net</span>
+<span class="w">  </span><span class="nt">scope</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Namespaced</span><span class="w">              </span><span class="c1"># 네임스페이스 / 클러스터 범위</span>
+<span class="w">  </span><span class="nt">names</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">plural</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">todos</span>
+<span class="w">    </span><span class="nt">singular</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">todo</span>
+<span class="w">    </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ToDo</span>
+<span class="w">  </span><span class="nt">versions</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="w">      </span><span class="nt">served</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">               </span><span class="c1"># API로 다룰 수 있음</span>
+<span class="w">      </span><span class="nt">storage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">              </span><span class="c1"># etcd에 저장</span>
+<span class="w">      </span><span class="nt">schema</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">openAPIV3Schema</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">object</span>
+<span class="w">          </span><span class="nt">properties</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">spec</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">object</span>
+<span class="w">              </span><span class="nt">properties</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">item</span><span class="p">:</span>
+<span class="w">                  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>todo-custom/<span class="w">                 </span><span class="c1"># CRD 배치</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>crd<span class="w"> </span>-l<span class="w"> </span><span class="nv">kiamol</span><span class="o">=</span>ch20
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>todo-custom/items/<span class="w">           </span><span class="c1"># 사용자 정의 리소스 생성</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>todos
+</code></pre></div>
+
+<div class="admonition warning">
+<p class="admonition-title">CRD를 삭제하면 그 리소스가 모두 함께 삭제된다</p>
+<p><code>kubectl delete crd todos.ch20.kiamol.net</code> 실행 시 해당 CRD로 만든 모든 객체가 함께 사라진다.</p>
+</div>
+<h3 id="_5">커스텀 컨트롤러</h3>
+<p><code>User</code> CRD의 변화를 컨트롤러가 주시하다 네임스페이스·서비스 계정·토큰을 대신 만든다. 사용자를 지우면 관련 네임스페이스도 정리된다.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>users/crd/<span class="w">                   </span><span class="c1"># User CRD 배치</span>
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>users/update/<span class="w">                </span><span class="c1"># 리소스 배치</span>
+kubectl<span class="w"> </span>logs<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>user-controller<span class="w"> </span>--tail<span class="w"> </span><span class="m">4</span><span class="w">  </span><span class="c1"># 컨트롤러 동작 로그</span>
+kubectl<span class="w"> </span>delete<span class="w"> </span>user<span class="w"> </span>tester3<span class="w">                   </span><span class="c1"># 삭제 → 네임스페이스 정리</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">get todos / 커스텀 컨트롤러 로그</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h3 id="_6">오퍼레이터</h3>
+<p>오퍼레이터는 NATS·MySQL 같은 복잡한 시스템을 YAML 몇 줄로 띄우고, 내부적으로 스테이트풀셋·서비스·비밀값을 생성한다.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># NATS 메시지 큐 클러스터</span>
+<span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nats.io/v1alpha2</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">NatsCluster</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">todo-list-queue</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">  </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1.3.0&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="c1"># 복제본 MySQL 클러스터</span>
+<span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mysql.presslabs.org/v1alpha1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MysqlCluster</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">todo-db</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">mysqlVersion</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;5.7.24&quot;</span>
+<span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">  </span><span class="nt">secretName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">todo-db-secret</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>todo-list/msgq/<span class="w">              </span><span class="c1"># 메시지 큐 생성</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>nats
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>todo-list/db/<span class="w">                </span><span class="c1"># DB 생성</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>mysql
+helm<span class="w"> </span>uninstall<span class="w"> </span>mysql-operator<span class="w">                 </span><span class="c1"># 정리 — 잔여 리소스는 직접 정리</span>
+</code></pre></div>
+
+<div class="admonition capture">
+<p class="admonition-title">get nats / get mysql</p>
+<p>(실습 화면 캡처)</p>
+</div>
+<h2 id="_7">막혔던 점</h2>
+<ul>
+<li>파워셸에 <code>grep</code>/<code>base64</code> 없음 → <code>. .\grep.ps1</code>·<code>. .\base64.ps1</code> 로드. grep은 <code>Select-String</code> 대체 가능.</li>
+<li><code>Forbidden</code> → 롤바인딩 전이거나 권한 없는 신원이면 정상. <code>kubectl auth can-i</code>로 검증, 필요 시 Role/RoleBinding 추가.</li>
+<li>그룹명 미검증 → 쿠버네티스는 그룹명을 검사하지 않음. 인증서 Subject와 RoleBinding의 그룹을 직접 일치시켜야 함.</li>
+<li>노드셀렉터·<code>required</code> 어피니티로 Pending → <code>kubectl get nodes --show-labels</code>로 레이블 확인. 강제 불필요 시 <code>preferred</code>로 완화.</li>
+<li>HPA TARGETS <code>&lt;unknown&gt;</code> → metrics-server 미설치. 설치 후 약 60초 대기 뒤 재확인.</li>
+<li>토큰 삭제 후 잠시 접근됨 → 회수 반영에 시간 소요. <code>sleep 30</code> 후 재시도.</li>
+</ul>
+    </div>
+    <aside class="toc"><div class="toc-title">목차</div><div class="toc">
+<ul>
+<li><a href="#rbac">RBAC</a><ul>
+<li><a href="#_1">사용자 인증서와 컨텍스트</a></li>
+<li><a href="#_2">롤바인딩</a></li>
+<li><a href="#_3">서비스 계정·토큰</a></li>
+</ul>
+</li>
+<li><a href="#hpa">스케줄링과 HPA</a><ul>
+<li><a href="#_4">어피니티</a></li>
+<li><a href="#hpa_1">HPA</a></li>
+</ul>
+</li>
+<li><a href="#crd">CRD와 오퍼레이터</a><ul>
+<li><a href="#_5">커스텀 컨트롤러</a></li>
+<li><a href="#_6">오퍼레이터</a></li>
+</ul>
+</li>
+<li><a href="#_7">막혔던 점</a></li>
+</ul>
+</div>
+</aside>
+  </div>
+  <nav class="postnav">
+    <a class="pn prev" href="week13.html">← WEEK 13<span>중앙 로그 관리 · 모니터링 · 인그레스</span></a>
+    <span class="pn disabled"></span>
+  </nav>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>클라우드 프로그래밍 기말 과제 · 개인 학습 포트폴리오</p>
+    <p class="muted">AWS · Docker · Kubernetes 실습 기록</p>
+  </div>
+</footer>
+</body>
+</html>
