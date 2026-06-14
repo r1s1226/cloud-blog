@@ -8,11 +8,13 @@
 
 ## 0. 两个 playground 怎么启动
 
-### 🐳 Play with Docker (PWD) — 用于 Docker 周(week04~06)
-1. 打开 **https://labs.play-with-docker.com**
-2. 点 **Login** → 选 **Docker**,用 Docker Hub 账号登录(没有就去 https://hub.docker.com 免费注册)
-3. 点 **Start** → 左侧 **+ ADD NEW INSTANCE**,右边出现一个终端(提示符 `node1 $`),这就是一台真 Linux Docker 主机(免费 4 小时)
-4. 命令直接粘进这个终端。截图就截这个终端区域。
+### 🐳 Google Cloud Shell — 用于 Docker 周(week04~06)
+> ⚠️ Play with Docker 已于 2026-03-01 停用,改用 Google Cloud Shell(Docker 预装、免费)。
+1. 打开 **https://shell.cloud.google.com**,用 **Google 账号**登录(首次点 Continue / 启动 Cloud Shell)。
+2. 出现浏览器终端后 `docker` 已就绪,命令直接粘进去。截图就截这个终端区域。
+3. 需要"网页访问"截图时(下面 week04 的 `localhost:8080`):点终端窗口右上的 **Web Preview(网页预览)→ Change port → 8080**,打开的页面就是容器响应 → 截那个页面。
+
+> 替代 환경(任选其一也行):**GitHub Codespaces**(你已有 GitHub:仓库页 Code → Codespaces → Create,终端里有 docker)、**killercoda Ubuntu playground**(需先 `curl -fsSL https://get.docker.com | sh`)。
 
 ### ☸️ killercoda — 用于 Kubernetes 周(week07、09~14)
 1. 打开 **https://killercoda.com**
@@ -31,7 +33,7 @@ AWS 需要你自己的账号+免费套餐,playground 没有。这三周的截图
 
 ---
 
-## 2. Docker 周 — 在 Play with Docker 里跑
+## 2. Docker 周 — 在 Google Cloud Shell 里跑
 
 ### week04 — 도커 기초
 ```bash
@@ -43,8 +45,8 @@ docker run -d --name web -p 8080:80 diamol/ch03-web-ping
 docker container ls
 docker container logs web
 
-# [易] 📸 "localhost:8080 접속 화면"  (PWD 顶部会出现 "8080" 端口按钮,点开就是容器页面 → 截那个页面)
-#     (PWD 会把 8080 映射成一个公网链接,点页面顶部出现的端口号即可)
+# [易] 📸 "localhost:8080 접속 화면"
+#     위에서 -p 8080:80 으로 띄운 뒤, Cloud Shell 우상단 [Web Preview → port 8080] 클릭 → 열린 페이지 캡처
 
 # [易] 📸 "image build / image ls 출력"
 git clone https://github.com/sixeyed/diamol.git
