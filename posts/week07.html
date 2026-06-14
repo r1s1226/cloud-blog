@@ -79,10 +79,8 @@ sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">en
 sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>containerd
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">containerd active (running) 상태</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="containerd 동작 상태" src="../assets/img/cluster-containerd.png" /><br />
+<em>▲ master 노드 <code>systemctl status containerd</code> — <code>active (running)</code>, 컨테이너 런타임 정상 동작.</em></p>
 <h3 id="4-swap">단계 4 — swap 끄기와 방화벽 비활성화</h3>
 <p>kubelet은 swap이 켜져 있으면 동작을 거부. swap을 끄고 <code>/etc/fstab</code>에서도 제거한 뒤 방화벽 비활성화.</p>
 <div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>-i
@@ -134,10 +132,8 @@ watch<span class="w"> </span>kubectl<span class="w"> </span>get<span class="w"> 
 kubectl<span class="w"> </span>get<span class="w"> </span>node<span class="w"> </span>-o<span class="w"> </span>wide
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">Calico 파드 Running</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="Calico 파드 Running" src="../assets/img/cluster-calico.png" /><br />
+<em>▲ <code>kubectl get pods -n calico-system -o wide</code> — calico-node·typha·csi 파드가 세 노드에서 Running(CNI 정상).</em></p>
 <h3 id="join">워커 노드 join</h3>
 <p>워커에 kubeconfig를 복사하고, 마스터가 출력한 <code>join</code> 명령으로 합류. 토큰 만료 시 마스터에서 재발급.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># 워커 노드에서</span>

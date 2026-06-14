@@ -63,8 +63,8 @@ sudo systemctl enable containerd
 sudo systemctl status containerd
 ```
 
-!!! capture "containerd active (running) 상태"
-    (실습 화면 캡처)
+![containerd 동작 상태](../assets/img/cluster-containerd.png)
+*▲ master 노드 `systemctl status containerd` — `active (running)`, 컨테이너 런타임 정상 동작.*
 
 ### 단계 4 — swap 끄기와 방화벽 비활성화
 
@@ -131,8 +131,8 @@ watch kubectl get pods -n calico-system
 kubectl get node -o wide
 ```
 
-!!! capture "Calico 파드 Running"
-    (실습 화면 캡처)
+![Calico 파드 Running](../assets/img/cluster-calico.png)
+*▲ `kubectl get pods -n calico-system -o wide` — calico-node·typha·csi 파드가 세 노드에서 Running(CNI 정상).*
 
 ### 워커 노드 join
 

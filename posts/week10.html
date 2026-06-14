@@ -182,10 +182,8 @@ kubectl<span class="w"> </span>delete<span class="w"> </span>pod<span class="w">
 kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>ls<span class="w"> </span>-l<span class="w"> </span>/node-root/volumes/pv01/pg_wal<span class="w">   </span><span class="c1"># 데이터는 남아 있다</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">kubectl get pv / pvc (Bound·Pending)</p>
-<p>(PVC가 Bound 된 모습과 용량이 큰 PVC가 Pending 으로 남는 모습을 함께 캡처)</p>
-</div>
+<p><img alt="PV / PVC Bound·Pending" src="../assets/img/cluster-pvpvc.png" /><br />
+<em>▲ <code>kubectl get pv,pvc</code> — <code>postgres-pvc</code> 는 pv01에 </em><em>Bound</em><em>, 용량이 큰 <code>postgres-pvc-toobig</code> 는 맞는 PV가 없어 </em><em>Pending</em><em>.</em></p>
 <h2 id="_5">스케일링</h2>
 <p>컨트롤러는 파드 템플릿으로 동일한 파드의 레플리카를 여러 개 만든다. 스케일링은 파드를 늘리는 것이다.</p>
 <p>레플리카셋(ReplicaSet)은 파드를 직접 관리한다. 디플로이먼트는 그 위에 관리 계층을 얹어, 업데이트 시 새 레플리카셋을 만들고 기존 레플리카셋을 0으로 줄여 롤아웃/롤백을 처리한다.</p>
@@ -251,10 +249,8 @@ kubectl<span class="w"> </span>get<span class="w"> </span>daemonset<span class="
 kubectl<span class="w"> </span>delete<span class="w"> </span>ds<span class="w"> </span>pi-proxy<span class="w"> </span>--cascade<span class="o">=</span><span class="nb">false</span><span class="w">  </span><span class="c1"># 관리 대상 파드는 남기고 데몬셋만 삭제</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">kubectl get ds</p>
-<p>(DESIRED/CURRENT/READY 수가 노드 수와 일치하는 화면 캡처)</p>
-</div>
+<p><img alt="DaemonSet 목록" src="../assets/img/cluster-ds.png" /><br />
+<em>▲ <code>kubectl get ds -A</code> — calico-node·kube-proxy 등 데몬셋이 노드마다 하나씩(DESIRED=CURRENT=READY) 동작.</em></p>
 <h2 id="_7">막혔던 점</h2>
 <ul>
 <li>컨피그맵 수정이 반영 안 됨 → 볼륨 마운트는 지연 반영(잠시 대기), 환경 변수는 파드 재배포(<code>apply</code>) 필요.</li>

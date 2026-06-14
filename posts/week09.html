@@ -219,10 +219,8 @@ kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </
 kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </span>numbers-web<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;http://{.status.loadBalancer.ingress[0].*}:8080&#39;</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">LoadBalancer EXTERNAL-IP</p>
-<p>(EXTERNAL-IP 가 채워진 화면 캡처)</p>
-</div>
+<p><img alt="LoadBalancer EXTERNAL-IP" src="../assets/img/cluster-lb.png" /><br />
+<em>▲ LoadBalancer 서비스에 MetalLB가 <code>EXTERNAL-IP 10.0.2.200</code> 을 할당 — 클러스터 외부에서 이 주소로 접근 가능.</em></p>
 <h3 id="externalname">ExternalName과 헤드리스</h3>
 <p>클러스터 외부 컴포넌트는 <strong>ExternalName</strong> 서비스로 로컬 이름을 외부 도메인(CNAME)에 연결한다.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>

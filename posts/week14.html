@@ -38,10 +38,8 @@ kubectl<span class="w"> </span>get<span class="w"> </span>clusterroles<span clas
 kubectl<span class="w"> </span>describe<span class="w"> </span>clusterrole<span class="w"> </span>cluster-admin<span class="w">         </span><span class="c1"># 사실상 전권 정의 확인</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">describe clusterrole cluster-admin 결과</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="cluster-admin 클러스터롤" src="../assets/img/cluster-clusterrole.png" /><br />
+<em>▲ <code>kubectl describe clusterrole cluster-admin</code> — PolicyRule이 <code>*.*</code> / Verbs <code>[*]</code> 로 모든 권한을 가진 역할.</em></p>
 <h3 id="_1">사용자 인증서와 컨텍스트</h3>
 <p>클라이언트 인증서로 신원을 만들어 자격 증명·컨텍스트로 등록한다.</p>
 <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>cp<span class="w"> </span>user-cert-generator:/certs/user.key<span class="w"> </span>user.key
@@ -229,10 +227,8 @@ kubectl<span class="w"> </span>logs<span class="w"> </span>-l<span class="w"> </
 kubectl<span class="w"> </span>delete<span class="w"> </span>user<span class="w"> </span>tester3<span class="w">                   </span><span class="c1"># 삭제 → 네임스페이스 정리</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">get todos / 커스텀 컨트롤러 로그</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="클러스터의 CRD 목록" src="../assets/img/cluster-crd.png" /><br />
+<em>▲ <code>kubectl get crd</code> — Calico·MetalLB·Tigera 오퍼레이터가 등록한 사용자 정의 리소스(CRD)들.</em></p>
 <h3 id="_6">오퍼레이터</h3>
 <p>오퍼레이터는 NATS·MySQL 같은 복잡한 시스템을 YAML 몇 줄로 띄우고, 내부적으로 스테이트풀셋·서비스·비밀값을 생성한다.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># NATS 메시지 큐 클러스터</span>

@@ -233,8 +233,8 @@ kubectl get svc numbers-web
 kubectl get svc numbers-web -o jsonpath='http://{.status.loadBalancer.ingress[0].*}:8080'
 ```
 
-!!! capture "LoadBalancer EXTERNAL-IP"
-    (EXTERNAL-IP 가 채워진 화면 캡처)
+![LoadBalancer EXTERNAL-IP](../assets/img/cluster-lb.png)
+*▲ LoadBalancer 서비스에 MetalLB가 `EXTERNAL-IP 10.0.2.200` 을 할당 — 클러스터 외부에서 이 주소로 접근 가능.*
 
 ### ExternalName과 헤드리스
 

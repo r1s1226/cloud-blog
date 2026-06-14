@@ -179,8 +179,8 @@ kubectl delete pod -l app=todo-db   # 파드를 지워도
 kubectl exec deploy/sleep -- ls -l /node-root/volumes/pv01/pg_wal   # 데이터는 남아 있다
 ```
 
-!!! capture "kubectl get pv / pvc (Bound·Pending)"
-    (PVC가 Bound 된 모습과 용량이 큰 PVC가 Pending 으로 남는 모습을 함께 캡처)
+![PV / PVC Bound·Pending](../assets/img/cluster-pvpvc.png)
+*▲ `kubectl get pv,pvc` — `postgres-pvc` 는 pv01에 **Bound**, 용량이 큰 `postgres-pvc-toobig` 는 맞는 PV가 없어 **Pending**.*
 
 ## 스케일링
 
@@ -258,8 +258,8 @@ kubectl get daemonset pi-proxy
 kubectl delete ds pi-proxy --cascade=false  # 관리 대상 파드는 남기고 데몬셋만 삭제
 ```
 
-!!! capture "kubectl get ds"
-    (DESIRED/CURRENT/READY 수가 노드 수와 일치하는 화면 캡처)
+![DaemonSet 목록](../assets/img/cluster-ds.png)
+*▲ `kubectl get ds -A` — calico-node·kube-proxy 등 데몬셋이 노드마다 하나씩(DESIRED=CURRENT=READY) 동작.*
 
 ## 막혔던 점
 

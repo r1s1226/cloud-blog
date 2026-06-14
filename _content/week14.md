@@ -11,8 +11,8 @@ kubectl get clusterroles | grep admin
 kubectl describe clusterrole cluster-admin         # 사실상 전권 정의 확인
 ```
 
-!!! capture "describe clusterrole cluster-admin 결과"
-    (실습 화면 캡처)
+![cluster-admin 클러스터롤](../assets/img/cluster-clusterrole.png)
+*▲ `kubectl describe clusterrole cluster-admin` — PolicyRule이 `*.*` / Verbs `[*]` 로 모든 권한을 가진 역할.*
 
 ### 사용자 인증서와 컨텍스트
 
@@ -234,8 +234,8 @@ kubectl logs -l app=user-controller --tail 4  # 컨트롤러 동작 로그
 kubectl delete user tester3                   # 삭제 → 네임스페이스 정리
 ```
 
-!!! capture "get todos / 커스텀 컨트롤러 로그"
-    (실습 화면 캡처)
+![클러스터의 CRD 목록](../assets/img/cluster-crd.png)
+*▲ `kubectl get crd` — Calico·MetalLB·Tigera 오퍼레이터가 등록한 사용자 정의 리소스(CRD)들.*
 
 ### 오퍼레이터
 
