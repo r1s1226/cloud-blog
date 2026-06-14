@@ -26,8 +26,8 @@ kubectl create configmap sleep-config-env-file --from-env-file=sleep/ch04.env  #
 ![kubectl로 컨피그맵 생성](../assets/img/week10-kubectl-cm.png)
 *▲ `kubectl create configmap ... --dry-run=client -o yaml` 로 컨피그맵을 생성해 본 결과(로컬 실행). `data` 아래에 키-값으로 설정이 담긴다.*
 
-!!! capture "printenv 결과"
-    (`printenv | grep "^KIAMOL"` 로 환경 변수가 주입된 화면과 `describe cm` 결과 캡처)
+![클러스터에서 ConfigMap 생성](../assets/img/cluster-configmap.png)
+*▲ 직접 구축한 클러스터에서 `kubectl create configmap` 후 `get cm -o yaml` — `data` 에 키-값 설정이 담긴다.*
 
 ### 볼륨 마운트로 설정 파일 주입
 

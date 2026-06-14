@@ -20,8 +20,8 @@ kubectl get pod hello-kiamol --output custom-columns=NAME:metadata.name,NODE_IP:
 kubectl get pod hello-kiamol -o jsonpath='{.status.containerStatuses[0].containerID}'
 ```
 
-!!! capture "kubectl get pods 출력"
-    (실습 화면 캡처 — STATUS Running, READY 1/1)
+![클러스터에서 실행 중인 파드](../assets/img/cluster-pods.png)
+*▲ 직접 구축한 클러스터의 `kubectl get pods -A -o wide` — Calico·CoreDNS·MetalLB 등 시스템 파드가 세 노드에 분산되어 Running.*
 
 ### 자가치유
 

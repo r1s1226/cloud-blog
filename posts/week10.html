@@ -49,10 +49,8 @@ kubectl<span class="w"> </span>create<span class="w"> </span>configmap<span clas
 
 <p><img alt="kubectl로 컨피그맵 생성" src="../assets/img/week10-kubectl-cm.png" /><br />
 <em>▲ <code>kubectl create configmap ... --dry-run=client -o yaml</code> 로 컨피그맵을 생성해 본 결과(로컬 실행). <code>data</code> 아래에 키-값으로 설정이 담긴다.</em></p>
-<div class="admonition capture">
-<p class="admonition-title">printenv 결과</p>
-<p>(<code>printenv | grep "^KIAMOL"</code> 로 환경 변수가 주입된 화면과 <code>describe cm</code> 결과 캡처)</p>
-</div>
+<p><img alt="클러스터에서 ConfigMap 생성" src="../assets/img/cluster-configmap.png" /><br />
+<em>▲ 직접 구축한 클러스터에서 <code>kubectl create configmap</code> 후 <code>get cm -o yaml</code> — <code>data</code> 에 키-값 설정이 담긴다.</em></p>
 <h3 id="_3">볼륨 마운트로 설정 파일 주입</h3>
 <p>컨피그맵을 파일로도 주입할 수 있다. 컨피그맵은 디렉터리, 각 항목은 파일이 된다.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>

@@ -82,8 +82,8 @@ kubectl config set-credentials ch17-sre --token=$(cat sa-token)
 kubectl delete secret sre2-sa-token -n kiamol-authn-sre         # 토큰 삭제로 권한 회수
 ```
 
-!!! capture "auth can-i 결과"
-    (실습 화면 캡처)
+![RBAC 권한 판정](../assets/img/cluster-rbac.png)
+*▲ 직접 구축한 클러스터에서 `kubectl auth can-i` — 관리자는 `*/*` 허용(yes), 기본 서비스 계정의 노드 삭제는 거부(no).*
 
 ## 스케줄링과 HPA
 
@@ -130,8 +130,8 @@ kubectl apply -f sleep/update/sleep2-with-nodeAffinity-required.yaml
 kubectl get pods -l app=numbers -o wide   # 같은 노드 배정 확인
 ```
 
-!!! capture "taint 후 Pending 상태"
-    (실습 화면 캡처)
+![노드 테인트 확인](../assets/img/cluster-taint.png)
+*▲ master 노드에 `node-role.kubernetes.io/control-plane:NoSchedule` 테인트가 있어 일반 파드는 배정되지 않는다(worker는 테인트 없음).*
 
 ### HPA
 

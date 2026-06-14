@@ -99,10 +99,8 @@ kubectl<span class="w"> </span>config<span class="w"> </span>set-credentials<spa
 kubectl<span class="w"> </span>delete<span class="w"> </span>secret<span class="w"> </span>sre2-sa-token<span class="w"> </span>-n<span class="w"> </span>kiamol-authn-sre<span class="w">         </span><span class="c1"># 토큰 삭제로 권한 회수</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">auth can-i 결과</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="RBAC 권한 판정" src="../assets/img/cluster-rbac.png" /><br />
+<em>▲ 직접 구축한 클러스터에서 <code>kubectl auth can-i</code> — 관리자는 <code>*/*</code> 허용(yes), 기본 서비스 계정의 노드 삭제는 거부(no).</em></p>
 <h2 id="hpa">스케줄링과 HPA</h2>
 <p>스케줄러가 노드 자원·점유량·배치 정책을 종합해 파드 배치를 결정한다.</p>
 <p>테인트(<code>NoSchedule</code>)를 건 노드는 일치하는 톨러레이션이 있는 파드만 배정한다.</p>
@@ -138,10 +136,8 @@ kubectl<span class="w"> </span>taint<span class="w"> </span>nodes<span class="w"
 kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>numbers<span class="w"> </span>-o<span class="w"> </span>wide<span class="w">   </span><span class="c1"># 같은 노드 배정 확인</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">taint 후 Pending 상태</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="노드 테인트 확인" src="../assets/img/cluster-taint.png" /><br />
+<em>▲ master 노드에 <code>node-role.kubernetes.io/control-plane:NoSchedule</code> 테인트가 있어 일반 파드는 배정되지 않는다(worker는 테인트 없음).</em></p>
 <h3 id="hpa_1">HPA</h3>
 <p>HPA는 부하에 맞춰 레플리카를 자동 조절한다. 부하 측정에는 metrics-server가 필요하다. v1은 CPU 한 지표만, v2는 다중 지표·스케일다운 제어를 지원한다.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># HPA v1</span>

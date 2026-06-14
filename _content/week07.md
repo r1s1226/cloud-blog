@@ -160,8 +160,8 @@ kubeadm token create --print-join-command
 kubectl get nodes
 ```
 
-!!! capture "kubectl get nodes 결과(Ready)"
-    (실습 화면 캡처)
+![직접 구축한 3노드 클러스터의 kubectl get nodes](../assets/img/cluster-nodes.png)
+*▲ VirtualBox에 직접 구축한 3노드 kubeadm 클러스터(v1.28.15)에서 `kubectl get nodes -o wide` — master·worker1·worker2 모두 Ready, 런타임 containerd.*
 
 ## 다양한 환경에서의 쿠버네티스
 

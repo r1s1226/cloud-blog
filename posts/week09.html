@@ -45,10 +45,8 @@ kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </
 kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>hello-kiamol<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.status.containerStatuses[0].containerID}&#39;</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">kubectl get pods 출력</p>
-<p>(실습 화면 캡처 — STATUS Running, READY 1/1)</p>
-</div>
+<p><img alt="클러스터에서 실행 중인 파드" src="../assets/img/cluster-pods.png" /><br />
+<em>▲ 직접 구축한 클러스터의 <code>kubectl get pods -A -o wide</code> — Calico·CoreDNS·MetalLB 등 시스템 파드가 세 노드에 분산되어 Running.</em></p>
 <h3 id="_2">자가치유</h3>
 <p>쿠버네티스는 파드에 필요한 컨테이너 개수를 유지한다. 컨테이너를 직접 지워도 대체 컨테이너가 생성된다.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># 파드에 포함된 컨테이너를 강제 삭제</span>
