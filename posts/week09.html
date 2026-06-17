@@ -190,10 +190,8 @@ kubectl<span class="w"> </span>port-forward<span class="w"> </span>deploy/number
 <span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ClusterIP</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">Go 버튼 정상 동작 화면</p>
-<p>(API 서비스 배포 후 무작위 숫자가 출력되는 화면 캡처)</p>
-</div>
+<p><img alt="API 서비스 배포 후 Go 버튼 동작" src="../assets/img/week09-go.png" /><br />
+<em>▲ <code>numbers-api</code> ClusterIP 서비스를 배포한 뒤 웹의 Go 버튼을 누르면, 웹 파드가 서비스 이름으로 API를 찾아 무작위 숫자(여기서는 90)를 받아 표시한다.</em></p>
 <h3 id="loadbalancer">외부 트래픽 — LoadBalancer</h3>
 <p>외부 트래픽을 파드로 전달하려면 <strong>LoadBalancer</strong> 서비스를 쓴다. 외부 EXTERNAL-IP로 접근한다.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>

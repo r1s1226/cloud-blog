@@ -205,8 +205,8 @@ spec:
   type: ClusterIP
 ```
 
-!!! capture "Go 버튼 정상 동작 화면"
-    (API 서비스 배포 후 무작위 숫자가 출력되는 화면 캡처)
+![API 서비스 배포 후 Go 버튼 동작](../assets/img/week09-go.png)
+*▲ `numbers-api` ClusterIP 서비스를 배포한 뒤 웹의 Go 버튼을 누르면, 웹 파드가 서비스 이름으로 API를 찾아 무작위 숫자(여기서는 90)를 받아 표시한다.*
 
 ### 외부 트래픽 — LoadBalancer
 
