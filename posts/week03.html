@@ -48,30 +48,24 @@
 <div class="highlight"><pre><span></span><code>traceroute<span class="w"> </span>&lt;대상&gt;<span class="w">        </span><span class="c1"># 목적지까지의 네트워크 경로(홉) 확인</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">traceroute 출력 / whois 조회 결과</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="traceroute 출력" src="../assets/img/net-traceroute.png" /><br />
+<em>▲ <code>traceroute -m 15 google.com</code> — 목적지(google.com)까지 거치는 홉(라우터)과 각 구간 응답 시간을 단계별로 확인한다. 응답을 막는 구간은 <code>* * *</code>로 표시된다.</em></p>
 <h2 id="2-vpc">실습 ② VPC로 퍼블릭/프라이빗 서브넷 구성하기</h2>
 <h3 id="1-vpc">단계 ① VPC 생성</h3>
 <ol>
 <li>VPC 콘솔 → <strong>[VPC 생성]</strong></li>
 <li>이름과 <strong>IP CIDR</strong>(예: <code>10.0.0.0/16</code>) 지정</li>
 </ol>
-<div class="admonition capture">
-<p class="admonition-title">VPC 생성 화면</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="VPC 생성 화면" src="../assets/img/aws-vpc-create.png" /><br />
+<em>▲ VPC 콘솔의 'VPC 등(VPC and more)'으로 생성 — IPv4 CIDR <code>10.0.0.0/16</code>, 가용 영역 2개, 퍼블릭·프라이빗 서브넷, NAT 게이트웨이는 '없음'(과금 방지). 우측 미리보기에 생성될 구성이 도식화된다.</em></p>
 <h3 id="2">단계 ② 퍼블릭 서브넷 생성</h3>
 <ol>
 <li>VPC의 CIDR에서 분할한 <strong>서브넷</strong>(예: <code>10.0.1.0/24</code>)을 특정 가용 영역에 생성</li>
 <li><strong>인터넷 게이트웨이(IGW)</strong> 생성 후 VPC에 연결</li>
 <li>서브넷 <strong>라우팅 테이블</strong>에 <code>0.0.0.0/0 → IGW</code> 경로 추가</li>
 </ol>
-<div class="admonition capture">
-<p class="admonition-title">서브넷·라우팅 테이블 / IGW 연결</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="VPC 리소스 맵" src="../assets/img/aws-vpc-map.png" /><br />
+<em>▲ 생성된 VPC의 리소스 맵 — VPC(<code>10.0.0.0/16</code>) 아래 가용 영역별 퍼블릭/프라이빗 서브넷(4개), 라우팅 테이블, 인터넷 게이트웨이(IGW)가 어떻게 연결되는지 한눈에 보여준다.</em></p>
 <h3 id="3">단계 ③ 퍼블릭 서브넷 통신 확인</h3>
 <p>퍼블릭 서브넷에 인스턴스를 두고 퍼블릭 IP를 할당한 뒤, 외부 인터넷과 통신되는지 확인한다.</p>
 <div class="admonition note">
