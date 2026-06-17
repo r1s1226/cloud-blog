@@ -93,8 +93,8 @@ kubectl exec deploy/sleep -c sleep -- wget -q -O - http://timecheck:8080  # 헬�
 kubectl exec deploy/sleep -c sleep -- wget -q -O - http://timecheck:8081  # 메트릭 API
 ```
 
-!!! capture "헬스/메트릭 사이드카 응답"
-    (실습 화면 캡처)
+![사이드카 컨테이너](../assets/img/k8s-sidecar.png)
+*▲ 같은 파드의 app 컨테이너가 `localhost:80` 으로 사이드카(nginx)에 접근한다 — 한 파드 안 컨테이너는 네트워크를 공유한다.*
 
 ## 스테이트풀셋
 

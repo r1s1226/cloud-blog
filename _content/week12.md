@@ -156,8 +156,8 @@ curl "$(cat api-url.txt)/rng"                              # 호출해 고장 �
 kubectl get endpoints numbers-api                          # 엔드포인트에서 제외 확인
 ```
 
-!!! capture "get endpoints — 레디니스로 제외"
-    (실습 화면 캡처)
+![레디니스 프로브와 엔드포인트](../assets/img/k8s-readiness.png)
+*▲ 레디니스 프로브가 실패한 파드는 READY 0/1 이 되고, 서비스 엔드포인트에서 제외되어 트래픽을 받지 않는다.*
 
 리브니스 프로브를 더하면 고장 난 파드가 재시작된다. `initialDelaySeconds`로 첫 체크를 늦추고 `failureThreshold`로 실패 허용 횟수를 정한다:
 

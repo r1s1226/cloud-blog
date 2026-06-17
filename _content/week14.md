@@ -179,8 +179,8 @@ kubectl top pods -l app=pi-web                # 파드별 CPU 확인
 kubectl apply -f pi/update/hpa-cpu-v2.yaml    # v2로 변경
 ```
 
-!!! capture "get hpa 스케일업·kubectl top pods"
-    (실습 화면 캡처)
+![kubectl top + HPA](../assets/img/k8s-top.png)
+*▲ metrics-server 설치 후 `kubectl top nodes` 로 노드 CPU·메모리를 확인하고, `kubectl autoscale` 로 만든 HPA가 등록된 모습.*
 
 ## CRD와 오퍼레이터
 

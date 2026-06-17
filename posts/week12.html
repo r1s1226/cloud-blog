@@ -162,10 +162,8 @@ curl<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</sp
 kubectl<span class="w"> </span>get<span class="w"> </span>endpoints<span class="w"> </span>numbers-api<span class="w">                          </span><span class="c1"># 엔드포인트에서 제외 확인</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">get endpoints — 레디니스로 제외</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="레디니스 프로브와 엔드포인트" src="../assets/img/k8s-readiness.png" /><br />
+<em>▲ 레디니스 프로브가 실패한 파드는 READY 0/1 이 되고, 서비스 엔드포인트에서 제외되어 트래픽을 받지 않는다.</em></p>
 <p>리브니스 프로브를 더하면 고장 난 파드가 재시작된다. <code>initialDelaySeconds</code>로 첫 체크를 늦추고 <code>failureThreshold</code>로 실패 허용 횟수를 정한다:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">livenessProbe</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">httpGet</span><span class="p">:</span><span class="w">                   </span><span class="c1"># 레디니스 프로브와 마찬가지로</span>

@@ -107,10 +107,8 @@ kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </sp
 kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>-c<span class="w"> </span>sleep<span class="w"> </span>--<span class="w"> </span>wget<span class="w"> </span>-q<span class="w"> </span>-O<span class="w"> </span>-<span class="w"> </span>http://timecheck:8081<span class="w">  </span><span class="c1"># 메트릭 API</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">헬스/메트릭 사이드카 응답</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="사이드카 컨테이너" src="../assets/img/k8s-sidecar.png" /><br />
+<em>▲ 같은 파드의 app 컨테이너가 <code>localhost:80</code> 으로 사이드카(nginx)에 접근한다 — 한 파드 안 컨테이너는 네트워크를 공유한다.</em></p>
 <h2 id="_3">스테이트풀셋</h2>
 <p>스테이트풀셋은 <code>todo-db-0</code>, <code>todo-db-1</code>처럼 규칙적 이름을 0번부터 순서대로 부여한다. 데이터베이스 같은 클러스터형 상태 애플리케이션 모델링에 쓴다.</p>
 <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch08

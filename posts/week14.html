@@ -177,10 +177,8 @@ kubectl<span class="w"> </span>top<span class="w"> </span>pods<span class="w"> <
 kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>pi/update/hpa-cpu-v2.yaml<span class="w">    </span><span class="c1"># v2로 변경</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">get hpa 스케일업·kubectl top pods</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="kubectl top + HPA" src="../assets/img/k8s-top.png" /><br />
+<em>▲ metrics-server 설치 후 <code>kubectl top nodes</code> 로 노드 CPU·메모리를 확인하고, <code>kubectl autoscale</code> 로 만든 HPA가 등록된 모습.</em></p>
 <h2 id="crd">CRD와 오퍼레이터</h2>
 <p>REST API 패턴을 그대로 확장해 사용자 정의 리소스 타입을 만든다. CRD로 타입을 정의하고, 커스텀 컨트롤러가 변화를 주시해 워크플로를 실행하며, 오퍼레이터는 CRD+컨트롤러로 복잡한 앱의 생애 주기를 관리한다.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apiextensions.k8s.io/v1</span>
