@@ -65,10 +65,8 @@ ssh<span class="w"> </span>-i<span class="w"> </span>키페어.pem<span class="w
 <em>▲ 인스턴스의 퍼블릭 IP(<code>http://32.236.189.5</code>)로 접속하니 EC2에서 띄운 웹 페이지(Hello AWS - r1s)가 응답한다.</em></p>
 <h2 id="4-cloudwatch">단계 ④ CloudWatch 모니터링</h2>
 <p>인스턴스의 <strong>모니터링</strong> 탭에서 CloudWatch 지표(CPU 사용률 등) 그래프를 확인한다.</p>
-<div class="admonition capture">
-<p class="admonition-title">CloudWatch 지표 그래프</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="CloudWatch 지표 그래프" src="../assets/img/aws-cloudwatch.png" /><br />
+<em>▲ EC2 인스턴스(r1s)의 </em><em>모니터링</em><em> 탭 — CloudWatch가 CPU 사용률·네트워크 입출력·CPU 크레딧 잔량 등 지표를 자동 수집해 그래프로 보여준다.</em></p>
 <h2 id="5">단계 ⑤ 리눅스 명령어로 인스턴스 정보 확인</h2>
 <div class="highlight"><pre><span></span><code>hostname<span class="w">        </span><span class="c1"># 호스트 이름 확인</span>
 uname<span class="w"> </span>-a<span class="w">        </span><span class="c1"># 커널·아키텍처 등 시스템 정보</span>

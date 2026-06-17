@@ -45,8 +45,8 @@ ssh -i 키페어.pem ubuntu@<퍼블릭IP>        # 프라이빗 키로 EC2에 SS
 
 인스턴스의 **모니터링** 탭에서 CloudWatch 지표(CPU 사용률 등) 그래프를 확인한다.
 
-!!! capture "CloudWatch 지표 그래프"
-    (실습 화면 캡처)
+![CloudWatch 지표 그래프](../assets/img/aws-cloudwatch.png)
+*▲ EC2 인스턴스(r1s)의 **모니터링** 탭 — CloudWatch가 CPU 사용률·네트워크 입출력·CPU 크레딧 잔량 등 지표를 자동 수집해 그래프로 보여준다.*
 
 ## 단계 ⑤ 리눅스 명령어로 인스턴스 정보 확인
 
