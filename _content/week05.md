@@ -48,8 +48,8 @@ docker image push registry.local:5000/gallery/ui:v1   # 사설 레지스트리�
 
 `insecure-registries`는 평문 통신을 허용하므로 실습·신뢰된 내부망에서만 사용한다.
 
-!!! capture "사설 레지스트리 push 결과"
-    (실습 화면 캡처)
+![사설 레지스트리 push](../assets/img/docker-private-push.png)
+*▲ `docker push localhost:5000/web:v1` — 로컬에 띄운 사설 레지스트리(registry:2)에 이미지가 레이어별로 업로드된다.*
 
 ## 태그 전략과 골든 이미지
 

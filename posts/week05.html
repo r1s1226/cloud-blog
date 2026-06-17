@@ -65,10 +65,8 @@ docker<span class="w"> </span>image<span class="w"> </span>push<span class="w"> 
 </code></pre></div>
 
 <p><code>insecure-registries</code>는 평문 통신을 허용하므로 실습·신뢰된 내부망에서만 사용한다.</p>
-<div class="admonition capture">
-<p class="admonition-title">사설 레지스트리 push 결과</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="사설 레지스트리 push" src="../assets/img/docker-private-push.png" /><br />
+<em>▲ <code>docker push localhost:5000/web:v1</code> — 로컬에 띄운 사설 레지스트리(registry:2)에 이미지가 레이어별로 업로드된다.</em></p>
 <h2 id="_3">태그 전략과 골든 이미지</h2>
 <p>하나의 이미지에 <code>major.minor.patch</code>와 <code>latest</code>를 조합해 붙인다. 운영은 재현성을 위해 정확한 버전(<code>2.1.106</code>), 개발은 <code>latest</code>를 함께 둔다. 공식 이미지를 조직 표준 베이스로 캡슐화한 것이 골든 이미지다.</p>
 <h2 id="_4">컨테이너 데이터 휘발성</h2>

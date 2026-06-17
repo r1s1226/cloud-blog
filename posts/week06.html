@@ -57,10 +57,8 @@ docker<span class="w"> </span>container<span class="w"> </span>inspect<span clas
 </code></pre></div>
 
 <p>상태 전환에는 <code>interval × retries</code>만큼 시간이 걸리므로 망가뜨린 직후 바로 unhealthy가 되지 않는다.</p>
-<div class="admonition capture">
-<p class="admonition-title">container inspect의 unhealthy 상태</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="container inspect unhealthy" src="../assets/img/docker-unhealthy.png" /><br />
+<em>▲ <code>--health-cmd</code>로 항상 실패하는 헬스 체크를 건 컨테이너 — <code>docker ps</code>의 STATUS가 <code>(unhealthy)</code>, <code>inspect</code>의 <code>State.Health</code>에 <code>"Status":"unhealthy"</code>와 실패 로그가 기록된다.</em></p>
 <h2 id="_2">디펜던시 체크</h2>
 <p>웹은 API가 있어야 동작한다. 시작 전에 의존 대상을 검증해, API의 <code>/rng</code>가 응답하지 않으면 실행 자체를 막는다.</p>
 <div class="highlight"><pre><span></span><code><span class="k">FROM</span><span class="w"> </span><span class="s">diamol/dotnet-aspnet</span>

@@ -36,8 +36,8 @@ docker container inspect $(docker container ls --last 1 --format '{{.ID}}')     
 
 상태 전환에는 `interval × retries`만큼 시간이 걸리므로 망가뜨린 직후 바로 unhealthy가 되지 않는다.
 
-!!! capture "container inspect의 unhealthy 상태"
-    (실습 화면 캡처)
+![container inspect unhealthy](../assets/img/docker-unhealthy.png)
+*▲ `--health-cmd`로 항상 실패하는 헬스 체크를 건 컨테이너 — `docker ps`의 STATUS가 `(unhealthy)`, `inspect`의 `State.Health`에 `"Status":"unhealthy"`와 실패 로그가 기록된다.*
 
 ## 디펜던시 체크
 
