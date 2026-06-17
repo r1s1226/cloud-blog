@@ -118,8 +118,8 @@ kubectl delete pod todo-db-0                              # 수동 삭제
 kubectl get pod todo-db-0 -o jsonpath='{.metadata.uid}'  # 대체 파드 uid(변경됨)
 ```
 
-!!! capture "파드 삭제 후 uid 변경"
-    (실습 화면 캡처)
+![파드 삭제 후 uid 변경](../assets/img/k8s-uid.png)
+*▲ StatefulSet의 web-0를 삭제하면 같은 이름으로 다시 생성되지만 uid는 새로 부여된다(870cdeb0… → 653f48a4…).*
 
 파드별 고유 DNS가 필요하면 `clusterIP: None`인 헤드리스 서비스를 쓴다. IP 대신 `todo-db-0.todo-db.default.svc.cluster.local` 도메인을 노출한다:
 

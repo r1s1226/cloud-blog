@@ -129,10 +129,8 @@ kubectl<span class="w"> </span>delete<span class="w"> </span>pod<span class="w">
 kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>todo-db-0<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.metadata.uid}&#39;</span><span class="w">  </span><span class="c1"># 대체 파드 uid(변경됨)</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">파드 삭제 후 uid 변경</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="파드 삭제 후 uid 변경" src="../assets/img/k8s-uid.png" /><br />
+<em>▲ StatefulSet의 web-0를 삭제하면 같은 이름으로 다시 생성되지만 uid는 새로 부여된다(870cdeb0… → 653f48a4…).</em></p>
 <p>파드별 고유 DNS가 필요하면 <code>clusterIP: None</code>인 헤드리스 서비스를 쓴다. IP 대신 <code>todo-db-0.todo-db.default.svc.cluster.local</code> 도메인을 노출한다:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
 <span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Service</span>
