@@ -84,8 +84,8 @@ docker container exec todo2 ls /data                                          # 
 
 Dockerfile에 `VOLUME <target-directory>`를 두면 컨테이너 실행 시 볼륨이 자동 생성된다.
 
-!!! capture "볼륨 데이터 유지 확인"
-    (실습 화면 캡처)
+![볼륨 데이터 유지](../assets/img/docker-volume.png)
+*▲ 볼륨에 쓴 파일을 다른 컨테이너에서 그대로 읽는다 — 컨테이너가 사라져도 볼륨의 데이터는 유지된다.*
 
 ## 바인드 마운트
 
@@ -151,8 +151,8 @@ services:
       - "8020:80"
 ```
 
-!!! capture "docker-compose up 실행 화면"
-    (실습 화면 캡처)
+![docker compose up](../assets/img/docker-compose.png)
+*▲ `docker compose up -d` 한 번으로 web(nginx)·cache(redis) 두 컨테이너를 함께 띄운 모습(`docker compose ps`).*
 
 ## 컨테이너 간 통신(내장 DNS)
 

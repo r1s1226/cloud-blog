@@ -13,8 +13,8 @@ curl http://localhost:8080/rng   # 네 번째부터 실패
 docker container ls              # 그런데도 상태는 Up
 ```
 
-!!! capture "네 번째 curl 실패 + 컨테이너는 여전히 Up"
-    (실습 화면 캡처)
+![헬스 없는 컨테이너의 문제](../assets/img/docker-healthcheck.png)
+*▲ numbers-api는 몇 번 호출 뒤 500 오류를 내지만, 헬스 체크가 없으면 컨테이너 STATUS는 여전히 `Up` 으로 표시된다.*
 
 ## HEALTHCHECK 인스트럭션
 
@@ -92,8 +92,8 @@ docker container port todo-test_todo-web_1 80                        # 무작위
 docker-compose -f docker-compose.yml -f docker-compose-v2.yml config  # 병합 결과 출력
 ```
 
-!!! capture "docker-compose config 병합 결과"
-    (실습 화면 캡처)
+![compose 설정 병합](../assets/img/docker-compose-config.png)
+*▲ `docker compose -f base -f override config` — 기본 파일과 오버라이드 파일이 병합된 최종 설정(web에 MODE=test·포트 추가)을 확인.*
 
 ## 환경 변수와 비밀값
 

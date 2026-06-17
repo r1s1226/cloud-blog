@@ -40,10 +40,8 @@ curl<span class="w"> </span>http://localhost:8080/rng<span class="w">   </span><
 docker<span class="w"> </span>container<span class="w"> </span>ls<span class="w">              </span><span class="c1"># 그런데도 상태는 Up</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">네 번째 curl 실패 + 컨테이너는 여전히 Up</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="헬스 없는 컨테이너의 문제" src="../assets/img/docker-healthcheck.png" /><br />
+<em>▲ numbers-api는 몇 번 호출 뒤 500 오류를 내지만, 헬스 체크가 없으면 컨테이너 STATUS는 여전히 <code>Up</code> 으로 표시된다.</em></p>
 <h2 id="healthcheck">HEALTHCHECK 인스트럭션</h2>
 <p>Dockerfile에 <code>HEALTHCHECK</code>를 넣으면 도커가 주기적으로 명령을 실행하고, <code>curl --fail</code>이 실패하면 컨테이너를 unhealthy로 표시한다.</p>
 <div class="highlight"><pre><span></span><code><span class="k">FROM</span><span class="w"> </span><span class="s">diamol/dotnet-aspnet</span>
@@ -103,10 +101,8 @@ docker<span class="w"> </span>container<span class="w"> </span>port<span class="
 <div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.yml<span class="w"> </span>-f<span class="w"> </span>docker-compose-v2.yml<span class="w"> </span>config<span class="w">  </span><span class="c1"># 병합 결과 출력</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">docker-compose config 병합 결과</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="compose 설정 병합" src="../assets/img/docker-compose-config.png" /><br />
+<em>▲ <code>docker compose -f base -f override config</code> — 기본 파일과 오버라이드 파일이 병합된 최종 설정(web에 MODE=test·포트 추가)을 확인.</em></p>
 <h2 id="_6">환경 변수와 비밀값</h2>
 <p>컴포즈는 <code>environment</code>, <code>env_file</code>, <code>${VAR}</code> 치환, <code>secrets</code>를 지원한다.</p>
 <div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span><span class="se">\</span>

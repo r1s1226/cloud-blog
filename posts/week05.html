@@ -91,10 +91,8 @@ docker<span class="w"> </span>container<span class="w"> </span><span class="nb">
 </code></pre></div>
 
 <p>Dockerfile에 <code>VOLUME &lt;target-directory&gt;</code>를 두면 컨테이너 실행 시 볼륨이 자동 생성된다.</p>
-<div class="admonition capture">
-<p class="admonition-title">볼륨 데이터 유지 확인</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="볼륨 데이터 유지" src="../assets/img/docker-volume.png" /><br />
+<em>▲ 볼륨에 쓴 파일을 다른 컨테이너에서 그대로 읽는다 — 컨테이너가 사라져도 볼륨의 데이터는 유지된다.</em></p>
 <h2 id="_6">바인드 마운트</h2>
 <p>바인드 마운트는 호스트 디렉터리를 컨테이너에 직접 연결한다.</p>
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>container<span class="w"> </span>run<span class="w"> </span>--mount<span class="w"> </span><span class="nv">type</span><span class="o">=</span>bind,source<span class="o">=</span><span class="nv">$source</span>,target<span class="o">=</span><span class="nv">$target</span><span class="w"> </span>-d<span class="w"> </span>-p<span class="w"> </span><span class="m">8012</span>:80<span class="w"> </span>diamol/ch06-todo-list<span class="w">  </span><span class="c1"># 호스트↔컨테이너 연결($source=호스트, $target=컨테이너)</span>
@@ -146,10 +144,8 @@ docker-compose<span class="w"> </span>down<span class="w">    </span><span class
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;8020:80&quot;</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">docker-compose up 실행 화면</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="docker compose up" src="../assets/img/docker-compose.png" /><br />
+<em>▲ <code>docker compose up -d</code> 한 번으로 web(nginx)·cache(redis) 두 컨테이너를 함께 띄운 모습(<code>docker compose ps</code>).</em></p>
 <h2 id="dns">컨테이너 간 통신(내장 DNS)</h2>
 <p>도커 내장 DNS는 컨테이너 이름을 도메인 삼아 IP를 돌려준다. 스케일 아웃 시 모든 컨테이너 IP가 나온다.</p>
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>container<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>image-of-the-day_image-gallery_1<span class="w"> </span>sh<span class="w">  </span><span class="c1"># 웹 컨테이너 셸 진입</span>
