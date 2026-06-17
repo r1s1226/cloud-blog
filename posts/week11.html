@@ -164,10 +164,8 @@ kubectl<span class="w"> </span>delete<span class="w"> </span>pod<span class="w">
 kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>sleep-with-pvc-0<span class="w"> </span>--<span class="w"> </span>cat<span class="w"> </span>/data/pod.txt<span class="w">              </span><span class="c1"># 대체 파드가 데이터 유지</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">get pvc — 파드별 PVC와 데이터 유지</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="get pvc — 파드별 PVC와 데이터 유지" src="../assets/img/week11-pvc.png" /><br />
+<em>▲ <code>volumeClaimTemplates</code>로 파드별 PVC(<code>data-sleep-with-pvc-0/1</code>)가 동적 생성·Bound된다. 파드 0에 쓴 <code>Pod 0</code>은 파드를 삭제해도, 대체 파드가 같은 PVC를 다시 연결하므로 그대로 읽힌다.</em></p>
 <h2 id="_4">롤아웃과 롤백</h2>
 <p>디플로이먼트는 기존 레플리카셋을 줄이고 새 레플리카셋을 늘려 무중단 업데이트한다. 파드 정의가 바뀔 때만 롤아웃이 적용된다(스케일 변경은 제외).</p>
 <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch09

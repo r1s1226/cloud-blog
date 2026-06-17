@@ -164,8 +164,8 @@ kubectl delete pod sleep-with-pvc-0                              # 수동 삭제
 kubectl exec sleep-with-pvc-0 -- cat /data/pod.txt              # 대체 파드가 데이터 유지
 ```
 
-!!! capture "get pvc — 파드별 PVC와 데이터 유지"
-    (실습 화면 캡처)
+![get pvc — 파드별 PVC와 데이터 유지](../assets/img/week11-pvc.png)
+*▲ `volumeClaimTemplates`로 파드별 PVC(`data-sleep-with-pvc-0/1`)가 동적 생성·Bound된다. 파드 0에 쓴 `Pod 0`은 파드를 삭제해도, 대체 파드가 같은 PVC를 다시 연결하므로 그대로 읽힌다.*
 
 ## 롤아웃과 롤백
 
