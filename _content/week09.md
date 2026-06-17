@@ -303,8 +303,8 @@ kubectl get svc -n kube-system
 kubectl exec deploy/sleep-1 -- sh -c 'nslookup numbers-api.default.svc.cluster.local | grep "^[^*]"'
 ```
 
-!!! capture "nslookup 결과"
-    (서비스 이름이 클러스터 내부 IP/도메인으로 해소되는 화면 캡처)
+![서비스 DNS 조회](../assets/img/k8s-dns.png)
+*▲ 클러스터 내부 DNS가 서비스 이름 `whoami` 를 ClusterIP(10.104.93.224)로 해소한다.*
 
 ## 막혔던 점
 

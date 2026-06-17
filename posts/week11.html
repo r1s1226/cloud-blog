@@ -121,10 +121,8 @@ kubectl<span class="w"> </span>get<span class="w"> </span>statefulset<span class
 kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>todo-db<span class="w">         </span><span class="c1"># 규칙적 파드 이름 확인</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">get statefulset / 규칙적 파드 이름</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="StatefulSet 파드(web-0/1/2)" src="../assets/img/k8s-statefulset.png" /><br />
+<em>▲ StatefulSet으로 만든 파드는 web-0·web-1·web-2 처럼 순서가 있는 이름을 갖고 각각 Running 상태다.</em></p>
 <p>파드가 삭제되면 같은 이름의 대체 파드를 만들되 uid는 새로 부여한다:</p>
 <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </span>todo-db-0<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.metadata.uid}&#39;</span><span class="w">  </span><span class="c1"># 삭제 전 uid</span>
 kubectl<span class="w"> </span>delete<span class="w"> </span>pod<span class="w"> </span>todo-db-0<span class="w">                              </span><span class="c1"># 수동 삭제</span>
@@ -191,10 +189,8 @@ kubectl<span class="w"> </span>rollout<span class="w"> </span>undo<span class="w
 kubectl<span class="w"> </span>rollout<span class="w"> </span>undo<span class="w"> </span>deploy/vweb<span class="w"> </span>--to-revision<span class="o">=</span><span class="m">2</span><span class="w">      </span><span class="c1"># 리비전 2로 롤백</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">rollout history</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="디플로이먼트 롤링 업데이트" src="../assets/img/k8s-rollout.png" /><br />
+<em>▲ 디플로이먼트 이미지를 nginx 1.25 → 1.26 으로 바꾸면 롤링 업데이트로 파드가 무중단 교체된다.</em></p>
 <h2 id="rollingupdate-vs-recreate">업데이트 전략 — RollingUpdate vs Recreate</h2>
 <p>기본값 RollingUpdate는 파드를 점진 교체해 무중단을 유지한다. Recreate는 기존 파드를 0까지 줄인 뒤 새 파드를 올려 다운타임이 생긴다.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">spec</span><span class="p">:</span>

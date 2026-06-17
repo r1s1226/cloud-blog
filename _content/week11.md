@@ -107,8 +107,8 @@ kubectl get statefulset todo-db         # 스테이트풀셋 확인
 kubectl get pods -l app=todo-db         # 규칙적 파드 이름 확인
 ```
 
-!!! capture "get statefulset / 규칙적 파드 이름"
-    (실습 화면 캡처)
+![StatefulSet 파드(web-0/1/2)](../assets/img/k8s-statefulset.png)
+*▲ StatefulSet으로 만든 파드는 web-0·web-1·web-2 처럼 순서가 있는 이름을 갖고 각각 Running 상태다.*
 
 파드가 삭제되면 같은 이름의 대체 파드를 만들되 uid는 새로 부여한다:
 
@@ -187,8 +187,8 @@ kubectl rollout undo deploy/vweb --dry-run            # 롤백 예측(미적용)
 kubectl rollout undo deploy/vweb --to-revision=2      # 리비전 2로 롤백
 ```
 
-!!! capture "rollout history"
-    (실습 화면 캡처)
+![디플로이먼트 롤링 업데이트](../assets/img/k8s-rollout.png)
+*▲ 디플로이먼트 이미지를 nginx 1.25 → 1.26 으로 바꾸면 롤링 업데이트로 파드가 무중단 교체된다.*
 
 ## 업데이트 전략 — RollingUpdate vs Recreate
 

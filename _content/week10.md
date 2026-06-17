@@ -214,8 +214,8 @@ kubectl apply -f whoami/update/whoami-replicas-3.yaml  # 레플리카 3으로 �
 kubectl exec deploy/sleep -- sh -c 'for i in 1 2 3; do curl -w "\n" -s http://whoami-web:8088; done;'
 ```
 
-!!! capture "로드밸런싱 응답"
-    (같은 서비스에 여러 번 요청했을 때 서로 다른 파드 호스트 이름이 응답하는 출력 캡처)
+![서비스 로드밸런싱](../assets/img/k8s-loadbalance.png)
+*▲ 같은 서비스(whoami)에 여러 번 요청하면 서로 다른 파드가 번갈아 응답한다 — 서비스 로드밸런싱.*
 
 ### kubectl scale vs apply
 

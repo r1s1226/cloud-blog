@@ -211,10 +211,8 @@ kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> <
 kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;for i in 1 2 3; do curl -w &quot;\n&quot; -s http://whoami-web:8088; done;&#39;</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">로드밸런싱 응답</p>
-<p>(같은 서비스에 여러 번 요청했을 때 서로 다른 파드 호스트 이름이 응답하는 출력 캡처)</p>
-</div>
+<p><img alt="서비스 로드밸런싱" src="../assets/img/k8s-loadbalance.png" /><br />
+<em>▲ 같은 서비스(whoami)에 여러 번 요청하면 서로 다른 파드가 번갈아 응답한다 — 서비스 로드밸런싱.</em></p>
 <h3 id="kubectl-scale-vs-apply">kubectl scale vs apply</h3>
 <p><code>kubectl scale</code> 은 즉석 변경이며, 이후 <code>apply</code> 하면 매니페스트 값으로 원복된다. <code>--show-labels</code> 로 파드와 레플리카셋이 <code>pod-template-hash</code> 로 묶임을 확인한다.</p>
 <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>rs<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>pi-web

@@ -276,10 +276,8 @@ kubectl<span class="w"> </span>get<span class="w"> </span>endpoints<span class="
 kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep-1<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;nslookup numbers-api.default.svc.cluster.local | grep &quot;^[^*]&quot;&#39;</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">nslookup 결과</p>
-<p>(서비스 이름이 클러스터 내부 IP/도메인으로 해소되는 화면 캡처)</p>
-</div>
+<p><img alt="서비스 DNS 조회" src="../assets/img/k8s-dns.png" /><br />
+<em>▲ 클러스터 내부 DNS가 서비스 이름 <code>whoami</code> 를 ClusterIP(10.104.93.224)로 해소한다.</em></p>
 <h2 id="_8">막혔던 점</h2>
 <ul>
 <li>서비스 이름으로 ping 실패 → ClusterIP에서 ICMP는 막힌 경우가 많음. HTTP 요청이나 nslookup으로 검증.</li>
