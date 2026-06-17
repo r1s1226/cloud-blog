@@ -111,9 +111,9 @@ kubeadm<span class="w"> </span>init<span class="w"> </span><span class="se">\</s
 <span class="c1"># sudo systemctl restart kubelet</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">kubeadm init 출력의 join 명령</p>
-<p>(실습 화면 캡처)</p>
+<div class="admonition note">
+<p class="admonition-title">join 명령은 init 출력 끝에 표시된다</p>
+<p><code>kubeadm init</code> 성공 시 출력 마지막에 워커가 합류할 <code>kubeadm join &lt;마스터IP&gt;:6443 --token ... --discovery-token-ca-cert-hash sha256:...</code> 명령이 나온다(아래 워커 join 단계의 명령과 동일 형식). 토큰이 만료되면 마스터에서 <code>kubeadm token create --print-join-command</code>로 재발급한다.</p>
 </div>
 <h3 id="7-kubeconfig">단계 7 — kubeconfig 복사</h3>
 <p>일반 사용자가 <code>kubectl</code>을 쓸 수 있도록 kubeconfig 복사.</p>

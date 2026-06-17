@@ -58,8 +58,8 @@ kubectl get pods -n kube-system --as reader@kiamol.net     # kube-system 거부
 kubectl delete -f sleep/ --as reader@kiamol.net            # 삭제 거부
 ```
 
-!!! capture "--as 신원 권한 거부/허용 비교"
-    (실습 화면 캡처)
+![--as 권한 거부/허용 비교](../assets/img/cluster-rbac-as.png)
+*▲ 직접 구축한 클러스터에서 `kubectl get pods --as reader@kiamol.net` — RoleBinding 전에는 `Forbidden`, `view` 롤을 default에 바인딩하면 default는 허용(`No resources found`)되지만 kube-system은 여전히 거부된다.*
 
 ### 서비스 계정·토큰
 

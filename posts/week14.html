@@ -77,10 +77,8 @@ kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> <
 kubectl<span class="w"> </span>delete<span class="w"> </span>-f<span class="w"> </span>sleep/<span class="w"> </span>--as<span class="w"> </span>reader@kiamol.net<span class="w">            </span><span class="c1"># 삭제 거부</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">--as 신원 권한 거부/허용 비교</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="--as 권한 거부/허용 비교" src="../assets/img/cluster-rbac-as.png" /><br />
+<em>▲ 직접 구축한 클러스터에서 <code>kubectl get pods --as reader@kiamol.net</code> — RoleBinding 전에는 <code>Forbidden</code>, <code>view</code> 롤을 default에 바인딩하면 default는 허용(<code>No resources found</code>)되지만 kube-system은 여전히 거부된다.</em></p>
 <h3 id="_3">서비스 계정·토큰</h3>
 <p>서비스 계정은 권한을 따로 주기 전엔 권한이 없다. 권한 확인은 <code>kubectl auth can-i</code>로 한다.</p>
 <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>auth<span class="w"> </span>can-i<span class="w"> </span><span class="s2">&quot;*&quot;</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
