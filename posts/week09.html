@@ -59,10 +59,8 @@ kubectl<span class="w"> </span>get<span class="w"> </span>pod<span class="w"> </
 <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>port-forward<span class="w"> </span>pod/hello-kiamol<span class="w"> </span><span class="m">8080</span>:80<span class="w">  </span><span class="c1"># 로컬 8080 → 파드 80, ctrl-c로 중단</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">port-forward 후 브라우저 화면</p>
-<p>(http://localhost:8080 의 hello-kiamol 페이지 캡처)</p>
-</div>
+<p><img alt="port-forward로 본 hello-kiamol 페이지" src="../assets/img/week09-hello.png" /><br />
+<em>▲ <code>kubectl port-forward pod/hello-kiamol 8080:80</code> 후 브라우저 접속 — ch02-hello-kiamol 파드가 응답한 "Hello from Chapter 2!" 페이지.</em></p>
 <h2 id="_4">디플로이먼트</h2>
 <p>디플로이먼트는 파드를 관리하는 컨트롤러 객체다. 현재 상태가 바람직한 상태와 다르면 자동으로 보정한다(노드 고장 시 대체 파드 실행 등).</p>
 <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>deployment<span class="w"> </span>hello-kiamol-2<span class="w"> </span>--image<span class="o">=</span>kiamol/ch02-hello-kiamol<span class="w">  </span><span class="c1"># 디플로이먼트 생성</span>

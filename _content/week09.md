@@ -41,8 +41,8 @@ kubectl get pod hello-kiamol   # 컨테이너가 다시 생성됨
 kubectl port-forward pod/hello-kiamol 8080:80  # 로컬 8080 → 파드 80, ctrl-c로 중단
 ```
 
-!!! capture "port-forward 후 브라우저 화면"
-    (http://localhost:8080 의 hello-kiamol 페이지 캡처)
+![port-forward로 본 hello-kiamol 페이지](../assets/img/week09-hello.png)
+*▲ `kubectl port-forward pod/hello-kiamol 8080:80` 후 브라우저 접속 — ch02-hello-kiamol 파드가 응답한 "Hello from Chapter 2!" 페이지.*
 
 ## 디플로이먼트
 
