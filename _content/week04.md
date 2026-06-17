@@ -22,8 +22,8 @@ docker-compose version
 
 `docker version` 에 Client·Server 버전이 모두 나오면 정상.
 
-!!! capture "docker version 출력"
-    (실습 화면 캡처)
+![docker version](../assets/img/docker-version.png)
+*▲ `docker version` — 클라이언트와 서버(Docker Engine 29.5.3)가 함께 표시되면 데몬 정상 동작.*
 
 ## 컨테이너 기본 명령
 
@@ -37,8 +37,8 @@ docker container logs <id>     # 로그
 docker container inspect <id>  # 상세 정보(JSON)
 ```
 
-!!! capture "container ls / logs 출력"
-    (실습 화면 캡처)
+![docker run / ps / logs](../assets/img/docker-run.png)
+*▲ `docker run -d` 로 컨테이너를 백그라운드 실행하고 `docker ps`·`docker logs` 로 상태와 로그를 확인.*
 
 ## 컨테이너로 웹 호스팅
 
@@ -50,8 +50,8 @@ docker container rm --force $(docker container ls --all --quiet)   # 전체 삭�
 
 브라우저에서 `http://localhost:8080` 접속 → 컨테이너가 응답.
 
-!!! capture "localhost:8080 접속 화면"
-    (실습 화면 캡처)
+![브라우저 웹 접속](../assets/img/docker-web.png)
+*▲ `docker run -d -p 8080:80 nginx` 후 브라우저로 접속하니 컨테이너가 띄운 nginx 페이지가 응답한다.*
 
 ## Docker Hub 이미지 실행
 
@@ -86,8 +86,8 @@ docker image history web-ping         # 레이어 내역
 
 레이어 캐시: 자주 바뀌는 `COPY app.js` 는 뒤쪽에 둬야 캐시 재사용.
 
-!!! capture "image build / image ls 출력"
-    (실습 화면 캡처)
+![docker build](../assets/img/docker-build.png)
+*▲ `docker build` 로 Dockerfile에서 이미지를 빌드하는 과정 — 인스트럭션이 레이어 단위로 실행된다.*
 
 ## 멀티 스테이지 빌드
 
@@ -122,8 +122,8 @@ ENTRYPOINT ["java", "-jar", "/app/iotd-service-0.1.0.jar"]
 
 `docker image ls` 로 빌더 이미지보다 최종 이미지가 작음을 확인.
 
-!!! capture "이미지 크기 비교"
-    (실습 화면 캡처)
+![멀티 스테이지 빌드](../assets/img/docker-multistage.png)
+*▲ 멀티 스테이지 빌드 — 빌더 단계(diamol/maven)와 최종 실행 이미지를 나눠 빌드한다.*
 
 ## 막혔던 점
 

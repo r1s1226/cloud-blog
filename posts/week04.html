@@ -49,10 +49,8 @@ docker-compose<span class="w"> </span>version
 </code></pre></div>
 
 <p><code>docker version</code> 에 Client·Server 버전이 모두 나오면 정상.</p>
-<div class="admonition capture">
-<p class="admonition-title">docker version 출력</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="docker version" src="../assets/img/docker-version.png" /><br />
+<em>▲ <code>docker version</code> — 클라이언트와 서버(Docker Engine 29.5.3)가 함께 표시되면 데몬 정상 동작.</em></p>
 <h2 id="_2">컨테이너 기본 명령</h2>
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>container<span class="w"> </span>run<span class="w"> </span>--interactive<span class="w"> </span>--tty<span class="w"> </span>diamol/base<span class="w">  </span><span class="c1"># 컨테이너 셸 진입</span>
 hostname<span class="w">                       </span><span class="c1"># 컨테이너 호스트명</span>
@@ -63,10 +61,8 @@ docker<span class="w"> </span>container<span class="w"> </span>logs<span class="
 docker<span class="w"> </span>container<span class="w"> </span>inspect<span class="w"> </span>&lt;id&gt;<span class="w">  </span><span class="c1"># 상세 정보(JSON)</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">container ls / logs 출력</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="docker run / ps / logs" src="../assets/img/docker-run.png" /><br />
+<em>▲ <code>docker run -d</code> 로 컨테이너를 백그라운드 실행하고 <code>docker ps</code>·<code>docker logs</code> 로 상태와 로그를 확인.</em></p>
 <h2 id="_3">컨테이너로 웹 호스팅</h2>
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>container<span class="w"> </span>ls<span class="w"> </span>--all<span class="w">                                          </span><span class="c1"># 멈춘 것까지 전체</span>
 docker<span class="w"> </span>container<span class="w"> </span>stats<span class="w"> </span>&lt;이미지&gt;<span class="w">                                     </span><span class="c1"># 리소스 사용량</span>
@@ -74,10 +70,8 @@ docker<span class="w"> </span>container<span class="w"> </span>rm<span class="w"
 </code></pre></div>
 
 <p>브라우저에서 <code>http://localhost:8080</code> 접속 → 컨테이너가 응답.</p>
-<div class="admonition capture">
-<p class="admonition-title">localhost:8080 접속 화면</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="브라우저 웹 접속" src="../assets/img/docker-web.png" /><br />
+<em>▲ <code>docker run -d -p 8080:80 nginx</code> 후 브라우저로 접속하니 컨테이너가 띄운 nginx 페이지가 응답한다.</em></p>
 <h2 id="docker-hub">Docker Hub 이미지 실행</h2>
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>image<span class="w"> </span>pull<span class="w"> </span>diamol/ch03-web-ping
 docker<span class="w"> </span>container<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>web-ping<span class="w"> </span>diamol/ch03-web-ping<span class="w">     </span><span class="c1"># 백그라운드 실행</span>
@@ -104,10 +98,8 @@ docker<span class="w"> </span>image<span class="w"> </span><span class="nb">hist
 </code></pre></div>
 
 <p>레이어 캐시: 자주 바뀌는 <code>COPY app.js</code> 는 뒤쪽에 둬야 캐시 재사용.</p>
-<div class="admonition capture">
-<p class="admonition-title">image build / image ls 출력</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="docker build" src="../assets/img/docker-build.png" /><br />
+<em>▲ <code>docker build</code> 로 Dockerfile에서 이미지를 빌드하는 과정 — 인스트럭션이 레이어 단위로 실행된다.</em></p>
 <h2 id="_4">멀티 스테이지 빌드</h2>
 <p>기본 구조 (build → test → 최종 단계, <code>COPY --from=</code> 으로 결과물만 전달):</p>
 <div class="highlight"><pre><span></span><code><span class="k">FROM</span><span class="w"> </span><span class="s">diamol/base</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="s">build-stage</span>
@@ -135,10 +127,8 @@ docker<span class="w"> </span>image<span class="w"> </span><span class="nb">hist
 </code></pre></div>
 
 <p><code>docker image ls</code> 로 빌더 이미지보다 최종 이미지가 작음을 확인.</p>
-<div class="admonition capture">
-<p class="admonition-title">이미지 크기 비교</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="멀티 스테이지 빌드" src="../assets/img/docker-multistage.png" /><br />
+<em>▲ 멀티 스테이지 빌드 — 빌더 단계(diamol/maven)와 최종 실행 이미지를 나눠 빌드한다.</em></p>
 <h2 id="_5">막혔던 점</h2>
 <ul>
 <li><code>docker</code> permission denied → <code>sudo usermod -aG docker $USER</code> 후 재로그인.</li>
