@@ -49,26 +49,20 @@
 <li><strong>보안 그룹</strong> — 인바운드에 SSH(22), HTTP(80) 허용 규칙 추가</li>
 <li><strong>[인스턴스 시작]</strong> → 상태가 <code>running</code>이 될 때까지 대기</li>
 </ol>
-<div class="admonition capture">
-<p class="admonition-title">인스턴스 시작 마법사 / 인스턴스 목록(running)</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="EC2 인스턴스 목록(running)" src="../assets/img/aws-ec2-instances.png" /><br />
+<em>▲ AWS EC2 콘솔에서 t3.micro 인스턴스(r1s)를 시작해 상태가 <code>Running</code> 이 된 모습.</em></p>
 <h2 id="2-ssh">단계 ② SSH로 인스턴스 접속</h2>
 <p>프라이빗 키로 접속한다.</p>
 <div class="highlight"><pre><span></span><code>chmod<span class="w"> </span><span class="m">400</span><span class="w"> </span>키페어.pem<span class="w">                       </span><span class="c1"># 프라이빗 키 권한 설정(소유자 읽기 전용)</span>
 ssh<span class="w"> </span>-i<span class="w"> </span>키페어.pem<span class="w"> </span>ubuntu@&lt;퍼블릭IP&gt;<span class="w">        </span><span class="c1"># 프라이빗 키로 EC2에 SSH 접속</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">SSH 접속 터미널</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="EC2 SSH 접속" src="../assets/img/aws-ec2-ssh.png" /><br />
+<em>▲ EC2 Instance Connect로 접속해 <code>uname -a</code>·<code>whoami</code>·<code>hostname</code> 으로 Amazon Linux 2023 환경을 확인하고 웹 서버(httpd)를 설치한 화면.</em></p>
 <h2 id="3">단계 ③ 웹 서비스 접속</h2>
 <p>인스턴스에 웹 서비스를 설정한 뒤, 브라우저 주소창에 <strong>퍼블릭 IP</strong>를 입력해 접속을 확인한다(<code>http://&lt;퍼블릭IP&gt;</code>).</p>
-<div class="admonition capture">
-<p class="admonition-title">브라우저 웹 접속</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="브라우저 웹 접속" src="../assets/img/aws-ec2-web.png" /><br />
+<em>▲ 인스턴스의 퍼블릭 IP(<code>http://32.236.189.5</code>)로 접속하니 EC2에서 띄운 웹 페이지(Hello AWS - r1s)가 응답한다.</em></p>
 <h2 id="4-cloudwatch">단계 ④ CloudWatch 모니터링</h2>
 <p>인스턴스의 <strong>모니터링</strong> 탭에서 CloudWatch 지표(CPU 사용률 등) 그래프를 확인한다.</p>
 <div class="admonition capture">

@@ -19,8 +19,8 @@ AWS 컴퓨팅 주차. AMI로 EC2 인스턴스를 배포 → SSH 접속 → 웹 �
 7. **보안 그룹** — 인바운드에 SSH(22), HTTP(80) 허용 규칙 추가
 8. **[인스턴스 시작]** → 상태가 `running`이 될 때까지 대기
 
-!!! capture "인스턴스 시작 마법사 / 인스턴스 목록(running)"
-    (실습 화면 캡처)
+![EC2 인스턴스 목록(running)](../assets/img/aws-ec2-instances.png)
+*▲ AWS EC2 콘솔에서 t3.micro 인스턴스(r1s)를 시작해 상태가 `Running` 이 된 모습.*
 
 ## 단계 ② SSH로 인스턴스 접속
 
@@ -31,15 +31,15 @@ chmod 400 키페어.pem                       # 프라이빗 키 권한 설정(�
 ssh -i 키페어.pem ubuntu@<퍼블릭IP>        # 프라이빗 키로 EC2에 SSH 접속
 ```
 
-!!! capture "SSH 접속 터미널"
-    (실습 화면 캡처)
+![EC2 SSH 접속](../assets/img/aws-ec2-ssh.png)
+*▲ EC2 Instance Connect로 접속해 `uname -a`·`whoami`·`hostname` 으로 Amazon Linux 2023 환경을 확인하고 웹 서버(httpd)를 설치한 화면.*
 
 ## 단계 ③ 웹 서비스 접속
 
 인스턴스에 웹 서비스를 설정한 뒤, 브라우저 주소창에 **퍼블릭 IP**를 입력해 접속을 확인한다(`http://<퍼블릭IP>`).
 
-!!! capture "브라우저 웹 접속"
-    (실습 화면 캡처)
+![브라우저 웹 접속](../assets/img/aws-ec2-web.png)
+*▲ 인스턴스의 퍼블릭 IP(`http://32.236.189.5`)로 접속하니 EC2에서 띄운 웹 페이지(Hello AWS - r1s)가 응답한다.*
 
 ## 단계 ④ CloudWatch 모니터링
 
