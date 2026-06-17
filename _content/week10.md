@@ -74,8 +74,8 @@ kubectl exec deploy/todo-web -- sh -c 'echo ch04 >> /app/config/config.json'
 !!! warning "볼륨 마운트로 주입한 컨피그맵의 갱신은 지연된다"
     볼륨 마운트로 주입한 설정 파일은 반영까지 시간이 걸린다(실습 `sleep 120`). 환경 변수로 주입한 값은 파드를 재배포해야 바뀐다.
 
-!!! capture "읽기 전용 쓰기 실패"
-    (읽기 전용 볼륨에 `echo ... >>` 시 권한 오류가 나는 화면 캡처)
+![읽기 전용 볼륨 쓰기 실패](../assets/img/k8s-readonly.png)
+*▲ `readOnly: true` 로 마운트한 컨피그맵은 읽기만 가능 — 쓰기를 시도하면 `Read-only file system` 오류가 난다.*
 
 ## 볼륨·마운트·클레임
 

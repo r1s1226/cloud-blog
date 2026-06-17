@@ -61,10 +61,8 @@ kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </sp
 kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>-c<span class="w"> </span>file-reader<span class="w"> </span>--<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;echo more &gt;&gt; /data-ro/hostname.txt&#39;</span><span class="w">  </span><span class="c1"># 읽기 전용 → 오류(정상)</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">멀티컨테이너 파일 공유 결과</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="멀티컨테이너 파일 공유" src="../assets/img/k8s-multicontainer.png" /><br />
+<em>▲ 한 파드 안 writer 컨테이너가 emptyDir에 쓴 파일을 reader 컨테이너가 그대로 읽는다 — 같은 파드 내 볼륨 공유.</em></p>
 <p>두 번째 컨테이너를 HTTP 서버로 바꾸면 <code>sleep</code>에서 <code>localhost:8080</code>으로 접근 가능. 외부 노출은 서비스로 처리:</p>
 <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>sleep/sleep-with-server.yaml<span class="w">                       </span><span class="c1"># 서버 컨테이너 포함 파드</span>
 kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>deploy/sleep<span class="w"> </span>-c<span class="w"> </span>sleep<span class="w"> </span>--<span class="w"> </span>wget<span class="w"> </span>-q<span class="w"> </span>-O<span class="w"> </span>-<span class="w"> </span>localhost:8080<span class="w">   </span><span class="c1"># localhost로 서버 호출</span>

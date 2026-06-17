@@ -36,8 +36,8 @@ kubectl exec deploy/sleep -c file-reader -- cat /data-ro/hostname.txt           
 kubectl exec deploy/sleep -c file-reader -- sh -c 'echo more >> /data-ro/hostname.txt'  # 읽기 전용 → 오류(정상)
 ```
 
-!!! capture "멀티컨테이너 파일 공유 결과"
-    (실습 화면 캡처)
+![멀티컨테이너 파일 공유](../assets/img/k8s-multicontainer.png)
+*▲ 한 파드 안 writer 컨테이너가 emptyDir에 쓴 파일을 reader 컨테이너가 그대로 읽는다 — 같은 파드 내 볼륨 공유.*
 
 두 번째 컨테이너를 HTTP 서버로 바꾸면 `sleep`에서 `localhost:8080`으로 접근 가능. 외부 노출은 서비스로 처리:
 

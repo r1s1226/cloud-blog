@@ -177,8 +177,8 @@ curl "$(cat api-url.txt)/rng"                                         # 고장 �
 kubectl get pods -l app=numbers-api                                   # RESTARTS 증가 확인
 ```
 
-!!! capture "리브니스로 파드 재시작"
-    (실습 화면 캡처)
+![리브니스 프로브로 컨테이너 재시작](../assets/img/k8s-liveness.png)
+*▲ 헬스 체크 파일이 사라져 리브니스 프로브가 실패하자 kubelet이 컨테이너를 재시작한다(RESTARTS 1).*
 
 비-HTTP 컴포넌트는 다른 방식을 쓴다. PostgreSQL은 레디니스에 포트 확인(`tcpSocket`), 리브니스에 명령 실행(`exec`)을 둔다:
 

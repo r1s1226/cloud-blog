@@ -91,10 +91,8 @@ kubectl<span class="w"> </span><span class="nb">exec</span><span class="w"> </sp
 <p class="admonition-title">볼륨 마운트로 주입한 컨피그맵의 갱신은 지연된다</p>
 <p>볼륨 마운트로 주입한 설정 파일은 반영까지 시간이 걸린다(실습 <code>sleep 120</code>). 환경 변수로 주입한 값은 파드를 재배포해야 바뀐다.</p>
 </div>
-<div class="admonition capture">
-<p class="admonition-title">읽기 전용 쓰기 실패</p>
-<p>(읽기 전용 볼륨에 <code>echo ... &gt;&gt;</code> 시 권한 오류가 나는 화면 캡처)</p>
-</div>
+<p><img alt="읽기 전용 볼륨 쓰기 실패" src="../assets/img/k8s-readonly.png" /><br />
+<em>▲ <code>readOnly: true</code> 로 마운트한 컨피그맵은 읽기만 가능 — 쓰기를 시도하면 <code>Read-only file system</code> 오류가 난다.</em></p>
 <h2 id="_4">볼륨·마운트·클레임</h2>
 <p>컨테이너 파일시스템의 기록 레이어는 컨테이너 생애주기를 따른다. 컨테이너가 재시작되면 기록한 파일이 사라진다.</p>
 <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>ch05

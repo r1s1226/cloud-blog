@@ -181,10 +181,8 @@ curl<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</sp
 kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>numbers-api<span class="w">                                   </span><span class="c1"># RESTARTS 증가 확인</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">리브니스로 파드 재시작</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="리브니스 프로브로 컨테이너 재시작" src="../assets/img/k8s-liveness.png" /><br />
+<em>▲ 헬스 체크 파일이 사라져 리브니스 프로브가 실패하자 kubelet이 컨테이너를 재시작한다(RESTARTS 1).</em></p>
 <p>비-HTTP 컴포넌트는 다른 방식을 쓴다. PostgreSQL은 레디니스에 포트 확인(<code>tcpSocket</code>), 리브니스에 명령 실행(<code>exec</code>)을 둔다:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">readinessProbe</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">tcpSocket</span><span class="p">:</span>
