@@ -38,17 +38,8 @@
 <li>외부 공개 3조건: <strong>퍼블릭 서브넷 배치 + 퍼블릭 IP 부여 + 보안 그룹 허용</strong>.</li>
 <li><code>stopped</code>는 일시 중지(EBS 과금 지속), <code>terminated</code>는 영구 삭제.</li>
 </ul>
-<h2 id="1-ami-ec2">단계 ① AMI로 EC2 인스턴스 배포</h2>
-<ol>
-<li>EC2 콘솔 → <strong>[인스턴스 시작]</strong> 클릭</li>
-<li><strong>AMI</strong> 선택 — AWS 기본 AMI(예: Ubuntu) 지정</li>
-<li><strong>인스턴스 유형</strong> — <strong>t2.micro</strong> 선택(프리 티어)</li>
-<li><strong>네트워크</strong> — 배포할 VPC·서브넷 지정</li>
-<li><strong>키 페어</strong> — 새로 생성 후 프라이빗 키(<code>.pem</code>)를 PC에 저장</li>
-<li><strong>스토리지</strong> — EBS 용량 지정</li>
-<li><strong>보안 그룹</strong> — 인바운드에 SSH(22), HTTP(80) 허용 규칙 추가</li>
-<li><strong>[인스턴스 시작]</strong> → 상태가 <code>running</code>이 될 때까지 대기</li>
-</ol>
+<h2 id="1-ec2">단계 ① EC2 인스턴스 배포</h2>
+<p>EC2 콘솔 → <strong>[인스턴스 시작]</strong> → AMI(Ubuntu) → 유형 <strong>t2.micro</strong>(프리 티어) → 네트워크(VPC·서브넷) → <strong>키 페어</strong> 생성·<code>.pem</code> 저장 → 스토리지(EBS) → <strong>보안 그룹</strong> 인바운드 SSH(22)·HTTP(80) 허용 → <strong>[인스턴스 시작]</strong> → 상태 <code>running</code> 대기.</p>
 <p><img alt="EC2 인스턴스 목록(running)" src="../assets/img/aws-ec2-instances.png" /><br />
 <em>▲ AWS EC2 콘솔에서 t3.micro 인스턴스(r1s)를 시작해 상태가 <code>Running</code> 이 된 모습.</em></p>
 <h2 id="2-ssh">단계 ② SSH로 인스턴스 접속</h2>
@@ -91,7 +82,7 @@ free<span class="w"> </span>-h<span class="w">         </span><span class="c1">#
     <aside class="toc"><div class="toc-title">목차</div><div class="toc">
 <ul>
 <li><a href="#_1">개념 요약</a></li>
-<li><a href="#1-ami-ec2">단계 ① AMI로 EC2 인스턴스 배포</a></li>
+<li><a href="#1-ec2">단계 ① EC2 인스턴스 배포</a></li>
 <li><a href="#2-ssh">단계 ② SSH로 인스턴스 접속</a></li>
 <li><a href="#3">단계 ③ 웹 서비스 접속</a></li>
 <li><a href="#4-cloudwatch">단계 ④ CloudWatch 모니터링</a></li>

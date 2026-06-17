@@ -29,7 +29,7 @@
   </div>
   <div class="post-layout">
     <div class="post-body">
-    <p>헬름 패키징 → 개발 워크플로(도커 vs 쿠버네티스) → 자기수복(프로브·원자적 업그레이드) 순서로 실습했다.</p>
+    <p>헬름 패키징 → 개발 워크플로(도커 vs 쿠버네티스) → 자기수복(프로브·원자적 업그레이드) 순서로 실습한다.</p>
 <h2 id="_1">헬름으로 애플리케이션 패키징</h2>
 <p>헬름은 여러 YAML을 차트로 묶는 쿠버네티스 패키지 관리자다. 차트를 클러스터에 설치한 인스턴스가 릴리스이고, 템플릿 변수(<code>{{ }}</code>)는 설치 시점에 값으로 치환된다.</p>
 <div class="highlight"><pre><span></span><code>choco<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>kubernetes-helm<span class="w">        </span><span class="c1"># 헬름 설치(윈도우)</span>

@@ -1,4 +1,4 @@
-쿠버네티스 운영 주차. 중앙 로그(Fluent Bit·Elasticsearch·Kibana) → 모니터링(Prometheus·Grafana·익스포터) → 인그레스(Nginx Ingress) 순서로 실습했다.
+쿠버네티스 운영 주차. 중앙 로그(Fluent Bit·Elasticsearch·Kibana) → 모니터링(Prometheus·Grafana·익스포터) → 인그레스(Nginx Ingress) 순서로 실습한다.
 
 ## 중앙 로그 — Fluent Bit + Elasticsearch
 

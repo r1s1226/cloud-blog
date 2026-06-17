@@ -29,7 +29,7 @@
   </div>
   <div class="post-layout">
     <div class="post-body">
-    <p>멀티컨테이너 파드 → 초기화 컨테이너·사이드카 → 스테이트풀셋 → 롤아웃/롤백 순서로 실습했다.</p>
+    <p>멀티컨테이너 파드 → 초기화 컨테이너·사이드카 → 스테이트풀셋 → 롤아웃/롤백 순서로 실습한다.</p>
 <h2 id="_1">멀티컨테이너 파드 — 볼륨 공유</h2>
 <p>같은 파드의 컨테이너는 같은 IP를 가지며 <code>localhost</code>로 통신하고 볼륨을 공유한다. <code>sleep</code>은 쓰기(<code>/data-rw</code>), <code>file-reader</code>는 읽기 전용(<code>/data-ro</code>)으로 같은 <code>emptyDir</code>를 마운트한 정의:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">spec</span><span class="p">:</span>

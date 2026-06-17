@@ -29,7 +29,7 @@
   </div>
   <div class="post-layout">
     <div class="post-body">
-    <p>쿠버네티스 운영 주차. 중앙 로그(Fluent Bit·Elasticsearch·Kibana) → 모니터링(Prometheus·Grafana·익스포터) → 인그레스(Nginx Ingress) 순서로 실습했다.</p>
+    <p>쿠버네티스 운영 주차. 중앙 로그(Fluent Bit·Elasticsearch·Kibana) → 모니터링(Prometheus·Grafana·익스포터) → 인그레스(Nginx Ingress) 순서로 실습한다.</p>
 <h2 id="fluent-bit-elasticsearch">중앙 로그 — Fluent Bit + Elasticsearch</h2>
 <p>컨테이너 로그는 각 노드 <code>/var/log/containers/</code>에 파일로 쌓인다. Fluent Bit이 노드마다 데몬셋으로 떠서 이 경로를 hostPath로 마운트해 수집한다.</p>
 <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>timecheck/<span class="w">                                            </span><span class="c1"># 로그 생성용 앱 배치</span>
