@@ -102,8 +102,8 @@ passwd          # 현재 계정 비밀번호 변경
     - 한 줄 전체 지우기: `Ctrl + U`
     - 터미널 종료: `exit` 또는 `Ctrl + D`
 
-!!! capture "우분투 터미널 실행 결과"
-    `date`, `man`, `passwd` 등을 실행한 터미널 화면을 캡처해 넣으면 실습 수행 근거가 된다.
+![우분투 터미널 기초 명령](../assets/img/ubuntu-terminal.png)
+*▲ Ubuntu 24.04 터미널에서 `date`·`whoami`·`hostname`·`uname -a`·`pwd`·`ls` 등 기초 리눅스 명령을 실행한 결과.*
 
 ## 실습 중 만난 문제와 해결
 
