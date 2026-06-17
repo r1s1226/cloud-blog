@@ -82,10 +82,8 @@ kubectl<span class="w"> </span>label<span class="w"> </span>pods<span class="w">
 kubectl<span class="w"> </span>port-forward<span class="w"> </span>deploy/hello-kiamol-2<span class="w"> </span><span class="m">8080</span>:80<span class="w">                        </span><span class="c1"># 디플로이먼트에도 포트포워딩</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">레이블 수정으로 파드가 추가된 화면</p>
-<p>(레이블 변경 직후 파드가 하나 늘어난 NAME·LABELS 목록 캡처)</p>
-</div>
+<p><img alt="레이블 변경으로 파드 추가" src="../assets/img/k8s-label.png" /><br />
+<em>▲ 파드 하나의 레이블을 바꿔 디플로이먼트 관리 대상에서 빼면(app=hi-orphan), 컨트롤러가 즉시 새 파드를 하나 더 만든다.</em></p>
 <h2 id="_5">매니페스트로 배포</h2>
 <p>매니페스트는 주로 <strong>YAML</strong> 로 쓰며 <code>apiVersion</code> 과 <code>kind</code> 로 시작한다. <code>--dry-run=client -o yaml</code> 로 골격을 생성할 수 있다.</p>
 <p><img alt="kubectl로 디플로이먼트 매니페스트 생성" src="../assets/img/week09-kubectl-deploy.png" /><br />

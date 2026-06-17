@@ -70,8 +70,8 @@ kubectl label pods -l app=hello-kiamol-x --overwrite app=hello-kiamol-2   # 원�
 kubectl port-forward deploy/hello-kiamol-2 8080:80                        # 디플로이먼트에도 포트포워딩
 ```
 
-!!! capture "레이블 수정으로 파드가 추가된 화면"
-    (레이블 변경 직후 파드가 하나 늘어난 NAME·LABELS 목록 캡처)
+![레이블 변경으로 파드 추가](../assets/img/k8s-label.png)
+*▲ 파드 하나의 레이블을 바꿔 디플로이먼트 관리 대상에서 빼면(app=hi-orphan), 컨트롤러가 즉시 새 파드를 하나 더 만든다.*
 
 ## 매니페스트로 배포
 

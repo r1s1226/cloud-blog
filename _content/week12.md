@@ -24,8 +24,8 @@ helm ls                                                                         
 helm upgrade --set servicePort=8010 --set replicaCount=3 ch10-vweb kiamol/vweb --version 1.0.0  # 업데이트
 ```
 
-!!! capture "helm install / helm ls 결과"
-    (실습 화면 캡처)
+![helm install 결과](../assets/img/k8s-helm.png)
+*▲ Helm을 설치하고 차트 저장소 추가·검색(`helm search`) 후 `helm install` 로 배포 — STATUS: deployed.*
 
 차트는 매니페스트 디렉터리이고, 설정값 자리를 템플릿 변수로 둔다. `web-ping` 차트의 디플로이먼트:
 

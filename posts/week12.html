@@ -50,10 +50,8 @@ helm<span class="w"> </span>ls<span class="w">                                  
 helm<span class="w"> </span>upgrade<span class="w"> </span>--set<span class="w"> </span><span class="nv">servicePort</span><span class="o">=</span><span class="m">8010</span><span class="w"> </span>--set<span class="w"> </span><span class="nv">replicaCount</span><span class="o">=</span><span class="m">3</span><span class="w"> </span>ch10-vweb<span class="w"> </span>kiamol/vweb<span class="w"> </span>--version<span class="w"> </span><span class="m">1</span>.0.0<span class="w">  </span><span class="c1"># 업데이트</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">helm install / helm ls 결과</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="helm install 결과" src="../assets/img/k8s-helm.png" /><br />
+<em>▲ Helm을 설치하고 차트 저장소 추가·검색(<code>helm search</code>) 후 <code>helm install</code> 로 배포 — STATUS: deployed.</em></p>
 <p>차트는 매니페스트 디렉터리이고, 설정값 자리를 템플릿 변수로 둔다. <code>web-ping</code> 차트의 디플로이먼트:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apps/v1</span>
 <span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Deployment</span>
