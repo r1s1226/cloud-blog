@@ -170,8 +170,8 @@ git remote add local http://localhost:3000/diamol/diamol.git
 git push local                          # 사용자명 diamol, 패스워드 diamol
 ```
 
-!!! capture "Gogs(localhost:3000)와 Jenkins 빌드 로그"
-    (실습 화면 캡처)
+!!! note "Gogs 푸시 → Jenkins 빌드"
+    Gogs(`http://localhost:3000`)에 저장소를 만들고 `git push local`로 코드를 올리면, 연결된 Jenkins(`http://localhost:8080/job/diamol`)가 빌드를 시작한다. 빌드 콘솔 로그에는 도커 이미지 빌드 → 레지스트리 푸시 단계가 차례로 찍히고, 성공하면 잡 이력에 파란 공으로 표시된다.
 
 ## 빌드 인자와 레이블
 

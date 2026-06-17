@@ -64,8 +64,8 @@ curl --data-binary "@web-ping-0.1.0.tgz" $(kubectl get svc repo-chartmuseum -o j
 helm install -f web-ping-values.yaml wp3 local/web-ping  # 설정 파일로 로컬 리포 차트 설치
 ```
 
-!!! capture "차트뮤지엄 업로드 결과"
-    (실습 화면 캡처)
+!!! note "차트뮤지엄 업로드 결과"
+    `curl --data-binary "@web-ping-0.1.0.tgz"`로 업로드하면 차트뮤지엄이 `{"saved":true}`를 반환한다. 이후 `helm repo update`를 거치면 `helm search repo local/web-ping`으로 사설 리포에서 차트가 검색되고, `helm install ... local/web-ping`으로 그대로 설치된다.
 
 의존 차트는 `condition`으로 켜고 끈다. 상위 차트(`pi`)가 하위 차트(`vweb`, `proxy`)를 참조하되 프록시는 필요할 때만 설치:
 
@@ -226,8 +226,8 @@ helm test todo-list                             # 스모크 테스트 실행
 kubectl logs -l job-name=todo-list-db-test      # 테스트 잡 로그
 ```
 
-!!! capture "helm test 통과"
-    (실습 화면 캡처)
+!!! note "helm test 결과"
+    `helm test todo-list`은 `helm.sh/hook: test` 잡을 실행하고, 통과하면 `Phase: Succeeded`를 출력한다. `kubectl logs -l job-name=todo-list-db-test`에는 스모크 테스트 쿼리(`SELECT COUNT(*) ...`) 결과가 찍혀 DB가 실제로 응답함을 확인한다.
 
 ## 막혔던 점
 

@@ -255,9 +255,9 @@ kubectl<span class="w"> </span>get<span class="w"> </span>mysql
 helm<span class="w"> </span>uninstall<span class="w"> </span>mysql-operator<span class="w">                 </span><span class="c1"># 정리 — 잔여 리소스는 직접 정리</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">get nats / get mysql</p>
-<p>(실습 화면 캡처)</p>
+<div class="admonition note">
+<p class="admonition-title">오퍼레이터로 띄운 NATS·MySQL</p>
+<p><code>kubectl get nats</code>·<code>kubectl get mysql</code>는 오퍼레이터가 CRD로부터 생성·관리하는 클러스터를 보여준다. YAML 몇 줄(NATS <code>size: 3</code>, MySQL <code>replicas: 2</code>)만으로 오퍼레이터가 내부에서 스테이트풀셋·서비스·비밀값을 자동 생성한다.</p>
 </div>
 <h2 id="_7">막혔던 점</h2>
 <ul>

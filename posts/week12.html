@@ -84,9 +84,9 @@ curl<span class="w"> </span>--data-binary<span class="w"> </span><span class="s2
 helm<span class="w"> </span>install<span class="w"> </span>-f<span class="w"> </span>web-ping-values.yaml<span class="w"> </span>wp3<span class="w"> </span>local/web-ping<span class="w">  </span><span class="c1"># 설정 파일로 로컬 리포 차트 설치</span>
 </code></pre></div>
 
-<div class="admonition capture">
+<div class="admonition note">
 <p class="admonition-title">차트뮤지엄 업로드 결과</p>
-<p>(실습 화면 캡처)</p>
+<p><code>curl --data-binary "@web-ping-0.1.0.tgz"</code>로 업로드하면 차트뮤지엄이 <code>{"saved":true}</code>를 반환한다. 이후 <code>helm repo update</code>를 거치면 <code>helm search repo local/web-ping</code>으로 사설 리포에서 차트가 검색되고, <code>helm install ... local/web-ping</code>으로 그대로 설치된다.</p>
 </div>
 <p>의존 차트는 <code>condition</code>으로 켜고 끈다. 상위 차트(<code>pi</code>)가 하위 차트(<code>vweb</code>, <code>proxy</code>)를 참조하되 프록시는 필요할 때만 설치:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v2</span>
@@ -220,9 +220,9 @@ kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> <
 kubectl<span class="w"> </span>logs<span class="w"> </span>-l<span class="w"> </span>job-name<span class="o">=</span>todo-list-db-test<span class="w">      </span><span class="c1"># 테스트 잡 로그</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">helm test 통과</p>
-<p>(실습 화면 캡처)</p>
+<div class="admonition note">
+<p class="admonition-title">helm test 결과</p>
+<p><code>helm test todo-list</code>은 <code>helm.sh/hook: test</code> 잡을 실행하고, 통과하면 <code>Phase: Succeeded</code>를 출력한다. <code>kubectl logs -l job-name=todo-list-db-test</code>에는 스모크 테스트 쿼리(<code>SELECT COUNT(*) ...</code>) 결과가 찍혀 DB가 실제로 응답함을 확인한다.</p>
 </div>
 <h2 id="_3">막혔던 점</h2>
 <ul>

@@ -14,8 +14,8 @@ docker image push $dockerId/image-gallery:v1               # 레지스트리에 
 
 푸시 참조에는 푸시 권한을 가진 계정명이 포함돼야 한다.
 
-!!! capture "docker login / push 결과"
-    (실습 화면 캡처)
+!!! note "Docker Hub 푸시 결과"
+    `docker login` 성공 후 `docker image push $dockerId/image-gallery:v1`을 실행하면 레이어가 순서대로 업로드되며 각 레이어에 `Pushed`, 마지막에 다이제스트(`sha256:...`)가 출력된다. 이미 허브에 있는 베이스 레이어는 `Mounted from ...`로 건너뛴다. 레이어별 업로드 동작은 아래 사설 레지스트리 푸시 화면과 동일하다.
 
 ## 사설 레지스트리
 

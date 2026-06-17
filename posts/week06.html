@@ -159,9 +159,9 @@ docker<span class="w"> </span>container<span class="w"> </span>ls
 git<span class="w"> </span>push<span class="w"> </span><span class="nb">local</span><span class="w">                          </span><span class="c1"># 사용자명 diamol, 패스워드 diamol</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">Gogs(localhost:3000)와 Jenkins 빌드 로그</p>
-<p>(실습 화면 캡처)</p>
+<div class="admonition note">
+<p class="admonition-title">Gogs 푸시 → Jenkins 빌드</p>
+<p>Gogs(<code>http://localhost:3000</code>)에 저장소를 만들고 <code>git push local</code>로 코드를 올리면, 연결된 Jenkins(<code>http://localhost:8080/job/diamol</code>)가 빌드를 시작한다. 빌드 콘솔 로그에는 도커 이미지 빌드 → 레지스트리 푸시 단계가 차례로 찍히고, 성공하면 잡 이력에 파란 공으로 표시된다.</p>
 </div>
 <h2 id="_8">빌드 인자와 레이블</h2>
 <p>Dockerfile에 <code>ARG</code>로 빌드 인자, <code>LABEL</code>로 버전·빌드 정보를 박는다.</p>

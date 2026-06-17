@@ -272,8 +272,8 @@ kubectl get mysql
 helm uninstall mysql-operator                 # 정리 — 잔여 리소스는 직접 정리
 ```
 
-!!! capture "get nats / get mysql"
-    (실습 화면 캡처)
+!!! note "오퍼레이터로 띄운 NATS·MySQL"
+    `kubectl get nats`·`kubectl get mysql`는 오퍼레이터가 CRD로부터 생성·관리하는 클러스터를 보여준다. YAML 몇 줄(NATS `size: 3`, MySQL `replicas: 2`)만으로 오퍼레이터가 내부에서 스테이트풀셋·서비스·비밀값을 자동 생성한다.
 
 ## 막혔던 점
 

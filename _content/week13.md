@@ -38,8 +38,8 @@ kubectl apply -f fluentbit/update/fluentbit-config-match.yaml          # 쿠버�
 kubectl rollout restart ds/fluent-bit -n kiamol-ch13-logging           # 데몬셋 재시작
 ```
 
-!!! capture "여러 파드 로그가 통합된 화면"
-    (실습 화면 캡처)
+!!! note "Fluent Bit 통합 로그"
+    `kubectl logs -l app=fluent-bit`로 보면 여러 네임스페이스·파드의 로그가 한 스트림으로 모인다. 쿠버네티스 필터 적용 후에는 각 줄에 `kubernetes.namespace_name`·`pod_name`·`container_name` 메타데이터가 JSON으로 붙어, 어느 파드의 로그인지 식별된다.
 
 ### Elasticsearch + Kibana
 
@@ -63,8 +63,8 @@ kubectl rollout restart ds/fluent-bit -n kiamol-ch13-logging           # 재시�
 
 Kibana에서 인덱스 패턴 생성 순서: Discover → Create index pattern → `test` 입력 → Time Filter field `@timestamp` 선택 → Create → Discover에서 로그 확인.
 
-!!! capture "Kibana Discover 로그 조회 화면"
-    (실습 화면 캡처)
+!!! note "Kibana Discover 로그 조회"
+    인덱스 패턴 `test`(시간 필드 `@timestamp`)를 만들면 Discover 화면에서 시간순 로그를 검색·필터할 수 있다. 왼쪽 필드 목록에서 `log`·`kubernetes.pod_name` 등을 골라 특정 파드 로그만 추려 본다.
 
 ## 모니터링 — Prometheus + Grafana
 
@@ -90,8 +90,8 @@ kubectl apply -f timecheck/                                   # 스크래핑 대
 kubectl scale deploy/timecheck --replicas 2 -n kiamol-ch14-test  # 인스턴스별 메트릭 생산
 ```
 
-!!! capture "Prometheus /targets·/graph 화면"
-    (실습 화면 캡처)
+!!! note "Prometheus 타깃·쿼리"
+    `:9090/targets`에서 자동 발견된 `test-pods` 잡의 대상이 모두 `UP`으로 뜨고, `/graph`에서 PromQL을 실행하면 스케일한 두 인스턴스의 메트릭이 각각 시계열로 그려진다.
 
 파드 애너테이션으로 스크래핑 동작을 제어한다: `prometheus.io/scrape: "false"`(제외), `prometheus.io/path`(경로), `prometheus.io/port`(포트).
 
@@ -135,8 +135,8 @@ kubectl logs -l app=todo-proxy -n kiamol-ch14-test -c exporter         # 익스�
 kubectl rollout restart deploy grafana -n kiamol-ch14-monitoring       # Grafana 재시작
 ```
 
-!!! capture "Grafana 대시보드"
-    (실습 화면 캡처)
+!!! note "Grafana 대시보드"
+    Prometheus를 데이터 소스로 한 대시보드에 요청 수·응답 시간·인스턴스별 부하가 패널로 그려진다. `loadgen`으로 부하를 주면 그래프가 실시간으로 치솟는다. 로그인은 `kiamol/kiamol`.
 
 ## 인그레스 — Nginx Ingress
 
@@ -173,8 +173,8 @@ kubectl apply -f hello-kiamol/ingress/hello.kiamol.local.yaml
 kubectl get ingress
 ```
 
-!!! capture "도메인 접속 결과 (hello.kiamol.local)"
-    (실습 화면 캡처)
+!!! note "인그레스 도메인 라우팅"
+    hosts에 `hello.kiamol.local`을 등록하고 브라우저로 접속하면, 인그레스 컨트롤러가 호스트 규칙에 맞춰 `hello-kiamol` 서비스로 라우팅해 페이지가 뜬다. 규칙에 없는 도메인은 기본 백엔드 404를 반환한다.
 
 ### 경로 라우팅
 
@@ -226,8 +226,8 @@ kubectl logs -l app=todo-web --tail 1 --since 60s            # 400 오류 원인
 kubectl apply -f todo-list/update/ingress-sticky.yaml       # 스티키 세션 적용
 ```
 
-!!! capture "캐시 적용 전후 비교"
-    (실습 화면 캡처)
+!!! note "캐싱·스티키 세션 효과"
+    `pi.kiamol.local?dp=30000`은 첫 요청은 계산에 몇 초 걸리지만, 캐싱 애너테이션 적용 후 새로고침은 즉시 응답한다. 레플리카를 늘린 todo-web은 스티키 세션 적용 전 매 요청이 다른 파드로 가 400이 나다가, 적용 후 같은 파드로 고정된다.
 
 ## 막혔던 점
 
