@@ -29,167 +29,77 @@
   </div>
   <div class="post-layout">
     <div class="post-body">
-    <p>첫 주차에서는 "클라우드란 무엇인가"라는 가장 근본적인 질문에서 출발했다. 온프레미스와 클라우드를 비교하고, 클라우드 서비스의 유형(IaaS·PaaS·SaaS)과 구축 모델을 정리한 뒤, 실제로 <strong>AWS 계정을 만들고</strong> <strong>VMware에 우분투 리눅스를 설치</strong>하면서 앞으로의 실습 환경을 준비했다.</p>
-<div class="admonition note">
-<p class="admonition-title">이번 주 학습 목표</p>
+    <p>클라우드 첫 주차. 클라우드 개념을 정리하고, AWS 계정 생성과 VMware 우분투 설치로 이후 실습 환경을 준비한다.</p>
+<h2 id="_1">개념 요약</h2>
 <ul>
-<li>온프레미스와 클라우드의 차이, 클라우드 컴퓨팅의 이점을 이해한다.</li>
-<li>IaaS·PaaS·SaaS와 퍼블릭/프라이빗/하이브리드 구축 모델을 구분한다.</li>
-<li>가상화와 서버리스의 개념을 잡는다.</li>
-<li>AWS에 가입하고 관리 콘솔을 둘러본다.</li>
-<li>VMware로 우분투를 설치하고 기초 리눅스 명령어를 사용한다.</li>
+<li><strong>온프레미스 vs 클라우드</strong> — 온프레미스는 서버·네트워크·공간을 직접 갖춰 운영. 클라우드는 인터넷으로 자원을 필요할 때(on-demand) 빌려 쓰고 쓴 만큼 과금(pay per use).</li>
+<li><strong>이점</strong> — 민첩성(필요 자원 즉시 확보)·탄력성(증감 자유)·비용 절감(사용량 기반).</li>
+<li><strong>구축 모델</strong> — 퍼블릭(공급자 소유, 확장성)·프라이빗(직접 구축, 보안)·하이브리드(둘을 연결).</li>
+<li><strong>가상화</strong> — 물리 자원을 나눠 가상 서버를 즉시 제공. <strong>서버리스</strong> — 호출될 때만 서버가 가동돼 사용 시간만 과금.</li>
 </ul>
-</div>
-<h2 id="1">1. 클라우드 컴퓨팅이란?</h2>
-<p>전통적인 IT 자원 구축 방식인 <strong>온프레미스(on-premises)</strong> 는 서버·네트워크·공간 등 모든 것을 사용자가 직접 마련하고 운영하는 방식이다. 'premise'가 건물·토지를 뜻하듯, 자체 공간에 자원을 두고 직접 관리한다. 안정적이지만 초기 비용과 운영 부담이 크다.</p>
-<p>반면 <strong>클라우드(cloud)</strong> 는 인터넷 어딘가에 "구름처럼" 모여 있는, 눈에 보이지 않는 IT 자원의 집합이다. 그리고 <strong>클라우드 컴퓨팅(cloud computing)</strong> 은 이 자원을 인터넷을 통해 <strong>필요할 때 즉시(on-demand)</strong> 가져다 쓰고 <strong>사용한 만큼만 비용을 내는(pay per use)</strong> 방식이다.</p>
-<div class="admonition concept">
-<p class="admonition-title">클라우드 컴퓨팅의 3가지 이점</p>
-<ul>
-<li><strong>민첩성</strong> — 컴퓨팅·스토리지·DB부터 머신러닝·빅데이터까지 필요한 자원을 빠르게 끌어다 쓸 수 있다.</li>
-<li><strong>탄력성</strong> — 미래를 대비해 자원을 과하게 미리 사둘 필요 없이, 필요한 만큼 늘리고 줄인다.</li>
-<li><strong>비용 절감</strong> — 데이터센터를 직접 짓는 것보다 사용량 기반 과금이 대체로 훨씬 저렴하다.</li>
-</ul>
-</div>
-<h3 id="iaas-paas-saas">서비스 유형 — IaaS · PaaS · SaaS</h3>
-<p>클라우드 서비스는 <strong>사용자와 공급자가 각각 어디까지 관리하느냐</strong>에 따라 세 가지로 나뉜다.</p>
+<p>서비스 유형은 공급자와 사용자의 관리 범위로 나뉜다.</p>
 <table>
 <thead>
 <tr>
 <th>유형</th>
-<th>공급자가 제공하는 범위</th>
-<th>사용자가 관리하는 범위</th>
-<th>비유(요리)</th>
+<th>사용자가 관리</th>
+<th>비유</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>IaaS</strong></td>
-<td>서버·네트워크·스토리지 등 인프라 + 가상화</td>
+<td>IaaS</td>
 <td>OS·미들웨어·앱</td>
-<td>밀키트 구입 후 약간만 조리</td>
+<td>밀키트</td>
 </tr>
 <tr>
-<td><strong>PaaS</strong></td>
-<td>인프라 + 플랫폼(런타임 등)</td>
-<td>애플리케이션만</td>
-<td>음식점에 배달 주문</td>
+<td>PaaS</td>
+<td>앱만</td>
+<td>배달 주문</td>
 </tr>
 <tr>
-<td><strong>SaaS</strong></td>
-<td>애플리케이션까지 전부</td>
-<td>서비스 이용만</td>
-<td>출장 뷔페가 다 해줌</td>
-</tr>
-<tr>
-<td>(온프레미스)</td>
-<td>—</td>
-<td>전부 직접</td>
-<td>재료 사서 다 직접</td>
+<td>SaaS</td>
+<td>이용만</td>
+<td>출장 뷔페</td>
 </tr>
 </tbody>
 </table>
-<h3 id="_1">구축 모델 — 퍼블릭 / 프라이빗 / 하이브리드</h3>
-<ul>
-<li><strong>퍼블릭 클라우드</strong>: 공급자(AWS·GCP·Azure)가 주체. 사용자는 자원을 소유하지 않고 빌려 쓴다. 확장성·글로벌 서비스에 유리.</li>
-<li><strong>프라이빗 클라우드</strong>: 사용자가 주체. 온프레미스 환경에 구축해 보안성이 높지만 확장성은 떨어진다.</li>
-<li><strong>하이브리드 클라우드</strong>: 둘을 연결해 단점을 보완한 모델.</li>
-</ul>
-<h3 id="_2">가상화와 서버리스</h3>
-<div class="admonition concept">
-<p class="admonition-title">가상화(Virtualization)</p>
-<p>물리 서버의 CPU·메모리 등 자원을 나눠 <strong>가상 서버</strong>를 만드는 기술. 클라우드에서 원하는 사양의 서버를 즉시 받을 수 있는 것은 가상화 덕분이다. 가상 서버는 물리 서버 자원의 일부를 독점해 마치 독립된 서버처럼 동작한다.</p>
-</div>
-<div class="admonition concept">
-<p class="admonition-title">서버리스(Serverless)</p>
-<p>"서버가 없다"가 아니라 <strong>서비스가 호출될 때만 서버가 가동되는</strong> 방식. 사용한 시간만큼만 과금되므로 비용을 줄일 수 있다.</p>
-</div>
-<h2 id="2-aws">2. AWS 입문</h2>
-<p><strong>AWS(Amazon Web Services)</strong> 는 200개가 넘는 클라우드 서비스를 제공하는, 글로벌 점유율 1위 퍼블릭 클라우드 공급자다. 전 세계 여러 <strong>리전(Region, 데이터센터가 모인 지리적 위치)</strong> 과 그 안의 <strong>가용 영역(Availability Zone)</strong> 으로 인프라가 구성되며, 우리나라에는 서울 리전이 있다.</p>
-<p>이 수업에서 다룰 핵심 서비스는 다음과 같다.</p>
-<ul>
-<li><strong>컴퓨팅</strong> — Amazon EC2 (가상 서버)</li>
-<li><strong>스토리지</strong> — Amazon S3 / EBS / EFS</li>
-<li><strong>데이터베이스</strong> — Amazon RDS / Aurora / DynamoDB</li>
-<li><strong>보안/자격 증명</strong> — AWS IAM</li>
-</ul>
-<div class="admonition warning">
-<p class="admonition-title">과금 주의 — 프리 티어와 자원 삭제</p>
-<p>AWS는 사용한 만큼 과금(Pay Per Use)한다. 처음 가입하면 12개월간 <strong>프리 티어</strong>로 일정 사용량까지 무료지만, 한도를 넘기거나 일부 서비스는 비용이 발생한다. <strong>실습이 끝나면 생성한 자원(인스턴스 등)을 반드시 삭제</strong>하는 습관을 들이는 게 좋다.</p>
-</div>
-<h2 id="3-1-aws">3. 실습 ① — AWS 가입하기 (프리 티어)</h2>
-<p>콘솔 가입 흐름을 따라가며 진행했다.</p>
-<ol>
-<li><a href="https://aws.amazon.com/ko/">aws.amazon.com</a> 접속 → <strong>[AWS 계정 생성]</strong> 클릭</li>
-<li>이메일 주소·계정 이름 입력 → 발송된 <strong>6자리 확인 코드</strong> 입력</li>
-<li>루트 사용자 <strong>암호</strong> 설정</li>
-<li>개인 정보(영문) 입력</li>
-<li><strong>결제 정보</strong> 입력 (가입 확인용으로 소액 결제 후 즉시 취소됨)</li>
-<li>휴대전화 <strong>SMS 인증</strong> + 캡차</li>
-<li><strong>[기본 지원 - 무료]</strong> 서포트 플랜 선택 → 가입 완료</li>
-<li><strong>AWS Management Console</strong>로 이동해 구성 둘러보기</li>
-</ol>
+<p>AWS 핵심 서비스: <strong>EC2</strong>(컴퓨팅)·<strong>S3/EBS/EFS</strong>(스토리지)·<strong>RDS/DynamoDB</strong>(DB)·<strong>IAM</strong>(권한). 인프라는 리전(서울 등)과 그 안의 가용 영역으로 구성된다.</p>
+<h2 id="1-aws">실습 ① AWS 가입 (프리 티어)</h2>
+<p>가입 흐름: 이메일·계정명 → 6자리 확인 코드 → 루트 암호 → 개인정보(영문) → 결제정보(확인용 소액 결제, 곧 취소) → 휴대전화 SMS 인증 → <strong>기본 지원(무료)</strong> 플랜 → 관리 콘솔 진입.</p>
 <p><img alt="AWS 관리 콘솔" src="../assets/img/aws-console.png" /><br />
 <em>▲ AWS 관리 콘솔에 로그인한 화면(EC2 대시보드) — 상단 서비스 검색창, 우상단 리전 선택, 프리 플랜 크레딧($100·잔여 183일)과 자원 현황을 확인할 수 있다.</em></p>
-<h2 id="4-2-vmware">4. 실습 ② — VMware에 우분투 리눅스 설치</h2>
-<p>서버 실습을 위해 <strong>VMware Workstation Player</strong>에 게스트 OS로 우분투를 설치했다.</p>
+<h2 id="2-vmware">실습 ② VMware에 우분투 설치</h2>
 <ol>
-<li>VMware Workstation Player 설치 (<a href="https://www.vmware.com/kr">vmware.com/kr</a>)</li>
-<li><strong>Create a New Virtual Machine</strong> → 게스트 OS는 나중에 설치(빈 디스크 먼저 생성) → 종류는 <strong>Linux</strong></li>
-<li>가상머신 이름·위치 지정, 디스크 용량 <strong>20GB</strong>, 저장 방식은 <em>Split virtual disk into multiple files</em></li>
-<li><a href="https://ubuntu.com">ubuntu.com</a>에서 ISO 다운로드 → ISO 연결 후 VMware 시작</li>
-<li>설치 옵션: 언어 <strong>한국어</strong>, 키보드 <strong>Korean</strong>, <strong>최소 설치 + 업데이트 다운로드 체크 해제</strong>, "디스크를 지우고 Ubuntu 설치", 시간대 <strong>Seoul</strong>, 사용자 계정(<code>user1</code>)·컴퓨터 이름(<code>myubuntu</code>) 등록</li>
-<li>설치 완료 후 재부팅 → 로그인</li>
+<li>VMware Workstation Player 설치</li>
+<li>새 가상머신 생성(게스트 OS는 나중에 설치) → 종류 Linux, 디스크 20GB</li>
+<li>ubuntu.com에서 ISO 내려받아 연결 후 부팅</li>
+<li>설치: 언어·키보드 한국어, 최소 설치, "디스크를 지우고 Ubuntu 설치", 시간대 Seoul, 계정 <code>user1</code>·호스트 <code>myubuntu</code></li>
+<li>재부팅 후 로그인</li>
 </ol>
-<h3 id="_3">기초 리눅스 명령어</h3>
-<p>터미널을 열고(프로그램 표시 → 터미널) 가장 기본적인 명령어부터 익혔다.</p>
-<div class="highlight"><pre><span></span><code>date<span class="w">            </span><span class="c1"># 현재 날짜와 시간 출력</span>
+<p>기초 리눅스 명령어(<code>명령 [옵션] [인자]</code> 구조):</p>
+<div class="highlight"><pre><span></span><code>date<span class="w">            </span><span class="c1"># 날짜·시간 출력</span>
 clear<span class="w">           </span><span class="c1"># 화면 지우기</span>
-man<span class="w"> </span>date<span class="w">        </span><span class="c1"># 명령어 사용법(매뉴얼) 보기</span>
-passwd<span class="w">          </span><span class="c1"># 현재 계정 비밀번호 변경</span>
+man<span class="w"> </span>date<span class="w">        </span><span class="c1"># 매뉴얼 보기</span>
+passwd<span class="w">          </span><span class="c1"># 비밀번호 변경</span>
+ls<span class="w"> </span>-l<span class="w"> </span>/etc<span class="w">      </span><span class="c1"># ls(명령) + -l(옵션) + /etc(인자)</span>
 </code></pre></div>
 
-<p>명령어는 보통 <code>명령 [옵션] [인자]</code> 구조를 갖는다. 예를 들어 <code>ls -l /etc</code> 는 명령(<code>ls</code>) + 옵션(<code>-l</code>) + 인자(<code>/etc</code>)의 조합이다.</p>
-<div class="admonition tip">
-<p class="admonition-title">명령행 편집 단축키</p>
-<ul>
-<li>단어 지우기: <code>Ctrl + W</code></li>
-<li>한 줄 전체 지우기: <code>Ctrl + U</code></li>
-<li>터미널 종료: <code>exit</code> 또는 <code>Ctrl + D</code></li>
-</ul>
-</div>
 <p><img alt="우분투 터미널 기초 명령" src="../assets/img/ubuntu-terminal.png" /><br />
 <em>▲ Ubuntu 24.04 터미널에서 <code>date</code>·<code>whoami</code>·<code>hostname</code>·<code>uname -a</code>·<code>pwd</code>·<code>ls</code> 등 기초 리눅스 명령을 실행한 결과.</em></p>
-<h2 id="_4">실습 중 만난 문제와 해결</h2>
-<div class="admonition problem">
-<p class="admonition-title">VMware에서 우분투가 너무 느리거나 부팅이 안 됨</p>
-<p><strong>원인</strong>: 가상머신에 할당한 메모리/CPU가 부족하거나, BIOS에서 가상화(Intel VT-x/AMD-V)가 꺼져 있는 경우가 많다.<br />
-<strong>해결</strong>: 가상머신 설정에서 메모리를 2GB 이상·CPU 코어 2개 정도로 늘리고, 부팅이 막히면 PC 재시작 후 BIOS에서 가상화 기능을 활성화한다. Windows라면 Hyper-V와 충돌할 수 있어 <em>Windows 기능</em>에서 Hyper-V를 끄는 것도 방법이다.</p>
-</div>
-<div class="admonition problem">
-<p class="admonition-title">AWS 가입 시 결제 카드 등록에서 막힘</p>
-<p><strong>원인</strong>: 해외 결제가 막힌 카드이거나, 가입 확인용 소액 결제(승인)가 거절되는 경우.<br />
-<strong>해결</strong>: 해외 결제가 가능한 카드를 사용하고, 결제 정보의 영문 주소·이름이 카드 정보와 일치하는지 확인한다. 이 단계의 소액 결제는 확인용이며 곧 취소된다.</p>
-</div>
-<h2 id="_5">회고</h2>
-<p>추상적으로만 알던 "클라우드"가 <strong>온프레미스의 부담을 덜기 위한 사용량 기반 IT 자원</strong>이라는 점이 정리됐다. 특히 IaaS·PaaS·SaaS를 <em>요리에 비유</em>한 설명이 직관적이었다. AWS 가입과 리눅스 설치는 단순 작업 같지만, 이후 모든 실습의 토대가 되는 환경을 직접 만들었다는 점에서 의미가 컸다. 다음 주차에서는 이 위에서 실제 <strong>EC2 서버</strong>를 띄워 본다.</p>
+<h2 id="_2">막혔던 점</h2>
+<ul>
+<li>VMware에서 우분투가 느리거나 부팅 실패 → 메모리 2GB↑·CPU 2코어로 상향, BIOS에서 가상화(VT-x/AMD-V) 활성화(윈도는 Hyper-V 끄기).</li>
+<li>AWS 결제 카드 등록 실패 → 해외 결제 가능 카드 + 영문 주소·이름이 카드와 일치하는지 확인. 가입 시 소액 결제는 확인용으로 곧 취소.</li>
+<li>프리 티어 과금 주의 → 12개월 무료지만 한도 초과·일부 서비스는 과금. 실습 후 생성 자원(인스턴스 등)은 반드시 삭제.</li>
+</ul>
     </div>
     <aside class="toc"><div class="toc-title">목차</div><div class="toc">
 <ul>
-<li><a href="#1">1. 클라우드 컴퓨팅이란?</a><ul>
-<li><a href="#iaas-paas-saas">서비스 유형 — IaaS · PaaS · SaaS</a></li>
-<li><a href="#_1">구축 모델 — 퍼블릭 / 프라이빗 / 하이브리드</a></li>
-<li><a href="#_2">가상화와 서버리스</a></li>
-</ul>
-</li>
-<li><a href="#2-aws">2. AWS 입문</a></li>
-<li><a href="#3-1-aws">3. 실습 ① — AWS 가입하기 (프리 티어)</a></li>
-<li><a href="#4-2-vmware">4. 실습 ② — VMware에 우분투 리눅스 설치</a><ul>
-<li><a href="#_3">기초 리눅스 명령어</a></li>
-</ul>
-</li>
-<li><a href="#_4">실습 중 만난 문제와 해결</a></li>
-<li><a href="#_5">회고</a></li>
+<li><a href="#_1">개념 요약</a></li>
+<li><a href="#1-aws">실습 ① AWS 가입 (프리 티어)</a></li>
+<li><a href="#2-vmware">실습 ② VMware에 우분투 설치</a></li>
+<li><a href="#_2">막혔던 점</a></li>
 </ul>
 </div>
 </aside>
