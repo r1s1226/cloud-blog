@@ -166,8 +166,8 @@ nslookup iotd                                                  # 스케일 아�
 
 대상이 컨테이너가 아니면 도커는 호스트로 요청을 넘겨 외부 IP를 조회한다.
 
-!!! capture "nslookup 다중 IP 결과"
-    (실습 화면 캡처)
+![서비스 이름 다중 IP 조회](../assets/img/docker-nslookup.png)
+*▲ `dig web` — 같은 `demo` 네트워크에 띄운 두 컨테이너(web1·web2)가 서비스 이름 `web` 하나로 묶여, 내장 DNS가 두 개의 IP(172.18.0.2·172.18.0.3)를 함께 돌려준다.*
 
 ## 막혔던 점
 

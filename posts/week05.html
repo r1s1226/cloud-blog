@@ -152,10 +152,8 @@ nslookup<span class="w"> </span>iotd<span class="w">                            
 </code></pre></div>
 
 <p>대상이 컨테이너가 아니면 도커는 호스트로 요청을 넘겨 외부 IP를 조회한다.</p>
-<div class="admonition capture">
-<p class="admonition-title">nslookup 다중 IP 결과</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="서비스 이름 다중 IP 조회" src="../assets/img/docker-nslookup.png" /><br />
+<em>▲ <code>dig web</code> — 같은 <code>demo</code> 네트워크에 띄운 두 컨테이너(web1·web2)가 서비스 이름 <code>web</code> 하나로 묶여, 내장 DNS가 두 개의 IP(172.18.0.2·172.18.0.3)를 함께 돌려준다.</em></p>
 <h2 id="_8">막혔던 점</h2>
 <ul>
 <li>사설 레지스트리 push에서 HTTP/HTTPS 오류 → 데몬 설정에 <code>"insecure-registries":["registry.local:5000"]</code> 추가 후 도커 재시작, <code>docker info</code>로 확인.</li>

@@ -179,10 +179,8 @@ curl<span class="w"> </span>http://registry.local:5000/v2/diamol/ch11-numbers-ap
 </code></pre></div>
 
 <p><code>docker.sock</code>을 마운트한 컨테이너는 사실상 호스트 도커 엔진을 전부 제어할 수 있으므로 운영 환경에서는 권한을 최소화한다.</p>
-<div class="admonition capture">
-<p class="admonition-title">레지스트리 API 응답</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="레지스트리 REST API 응답" src="../assets/img/docker-registry-api.png" /><br />
+<em>▲ 로컬 레지스트리 REST API — <code>/v2/_catalog</code>는 리포지터리 목록(<code>["web"]</code>), <code>/v2/web/tags/list</code>는 해당 리포지터리의 태그(<code>["v1"]</code>)를 JSON으로 반환한다.</em></p>
 <h2 id="_9">막혔던 점</h2>
 <ul>
 <li>앱은 죽었는데 상태가 계속 Up → <code>HEALTHCHECK CMD curl --fail ...</code> 추가. 단 <code>interval × retries</code>만큼 기다린 뒤 확인.</li>

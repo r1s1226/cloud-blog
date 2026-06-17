@@ -196,8 +196,8 @@ curl http://registry.local:5000/v2/diamol/ch11-numbers-api/tags/list     # 특�
 
 `docker.sock`을 마운트한 컨테이너는 사실상 호스트 도커 엔진을 전부 제어할 수 있으므로 운영 환경에서는 권한을 최소화한다.
 
-!!! capture "레지스트리 API 응답"
-    (실습 화면 캡처)
+![레지스트리 REST API 응답](../assets/img/docker-registry-api.png)
+*▲ 로컬 레지스트리 REST API — `/v2/_catalog`는 리포지터리 목록(`["web"]`), `/v2/web/tags/list`는 해당 리포지터리의 태그(`["v1"]`)를 JSON으로 반환한다.*
 
 ## 막혔던 점
 
