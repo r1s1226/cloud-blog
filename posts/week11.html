@@ -205,10 +205,8 @@ kubectl<span class="w"> </span>get<span class="w"> </span>rs<span class="w"> </s
 curl<span class="w"> </span><span class="k">$(</span>cat<span class="w"> </span>url.txt<span class="k">)</span><span class="w"> </span>-UseBasicParsing<span class="w">                 </span><span class="c1"># 여전히 응답</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">Recreate 중단 vs RollingUpdate 유지</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="Recreate vs RollingUpdate" src="../assets/img/week11-strategy.png" /><br />
+<em>▲ 잘못된 v3 이미지로 업데이트 — Recreate는 기존 파드 3개를 한꺼번에 Terminating(다운타임), RollingUpdate는 새 ReplicaSet(<code>vweb-698…</code>)을 따로 만들어 점진 교체한다(두 ReplicaSet으로 전환 관리).</em></p>
 <h2 id="_5">막혔던 점</h2>
 <ul>
 <li>멀티컨테이너 파드에서 <code>kubectl logs</code>/<code>exec</code> 오류 → <code>-c</code>로 컨테이너 지정.</li>

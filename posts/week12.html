@@ -39,10 +39,8 @@ helm<span class="w"> </span>repo<span class="w"> </span>update<span class="w">  
 helm<span class="w"> </span>search<span class="w"> </span>repo<span class="w"> </span>vweb<span class="w"> </span>--versions<span class="w">        </span><span class="c1"># 차트 검색</span>
 </code></pre></div>
 
-<div class="admonition capture">
-<p class="admonition-title">helm search repo 결과</p>
-<p>(실습 화면 캡처)</p>
-</div>
+<p><img alt="helm search repo 결과" src="../assets/img/helm-search.png" /><br />
+<em>▲ <code>helm repo add kiamol</code> 후 <code>helm search repo vweb --versions</code> — 원격 리포에 등록된 vweb 차트가 버전별(2.0.0·1.0.0)로 검색된다.</em></p>
 <p><code>helm show values</code>로 파라미터를 확인하고 <code>--set</code>으로 값을 바꿔 설치한다. <code>helm upgrade</code>로 업데이트:</p>
 <div class="highlight"><pre><span></span><code>helm<span class="w"> </span>show<span class="w"> </span>values<span class="w"> </span>kiamol/vweb<span class="w"> </span>--version<span class="w"> </span><span class="m">1</span>.0.0<span class="w">  </span><span class="c1"># 파라미터 기본값</span>
 helm<span class="w"> </span>install<span class="w"> </span>--set<span class="w"> </span><span class="nv">servicePort</span><span class="o">=</span><span class="m">8010</span><span class="w"> </span>--set<span class="w"> </span><span class="nv">replicaCount</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>ch10-vweb<span class="w"> </span>kiamol/vweb<span class="w"> </span>--version<span class="w"> </span><span class="m">1</span>.0.0<span class="w">  </span><span class="c1"># 설치</span>

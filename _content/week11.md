@@ -215,8 +215,8 @@ kubectl get rs -l app=vweb
 curl $(cat url.txt) -UseBasicParsing                 # 여전히 응답
 ```
 
-!!! capture "Recreate 중단 vs RollingUpdate 유지"
-    (실습 화면 캡처)
+![Recreate vs RollingUpdate](../assets/img/week11-strategy.png)
+*▲ 잘못된 v3 이미지로 업데이트 — Recreate는 기존 파드 3개를 한꺼번에 Terminating(다운타임), RollingUpdate는 새 ReplicaSet(`vweb-698…`)을 따로 만들어 점진 교체한다(두 ReplicaSet으로 전환 관리).*
 
 ## 막혔던 점
 

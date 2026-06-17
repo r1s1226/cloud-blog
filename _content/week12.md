@@ -12,8 +12,8 @@ helm repo update                        # 캐시 업데이트
 helm search repo vweb --versions        # 차트 검색
 ```
 
-!!! capture "helm search repo 결과"
-    (실습 화면 캡처)
+![helm search repo 결과](../assets/img/helm-search.png)
+*▲ `helm repo add kiamol` 후 `helm search repo vweb --versions` — 원격 리포에 등록된 vweb 차트가 버전별(2.0.0·1.0.0)로 검색된다.*
 
 `helm show values`로 파라미터를 확인하고 `--set`으로 값을 바꿔 설치한다. `helm upgrade`로 업데이트:
 
